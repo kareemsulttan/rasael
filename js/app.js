@@ -338,11 +338,10 @@ function readHash() {
 
 /* ---------- قياس الشريطَين لتوسيط البطاقة ---------- */
 function measureChrome() {
-  const top = $('.progress').offsetHeight, bottom = $('.bar').offsetHeight;
-  document.documentElement.style.setProperty('--chrome-top', top + 'px');
-  document.documentElement.style.setProperty('--chrome-bottom', bottom + 'px');
+  // --chrome-top ثابت في main.css؛ يُقاس الشريط السفلي فقط
+  document.documentElement.style.setProperty('--chrome-bottom', $('.bar').offsetHeight + 'px');
 }
-if ('ResizeObserver' in window) { const ro = new ResizeObserver(measureChrome); ro.observe($('.progress')); ro.observe($('.bar')); }
+if ('ResizeObserver' in window) { new ResizeObserver(measureChrome).observe($('.bar')); }
 window.addEventListener('resize', measureChrome);
 
 /* ---------- التشغيل ---------- */
