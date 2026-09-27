@@ -336,9 +336,19 @@ function readHash() {
   return true;
 }
 
+/* ---------- قياس الشريطَين لتوسيط البطاقة ---------- */
+function measureChrome() {
+  const top = $('.progress').offsetHeight, bottom = $('.bar').offsetHeight;
+  document.documentElement.style.setProperty('--chrome-top', top + 'px');
+  document.documentElement.style.setProperty('--chrome-bottom', bottom + 'px');
+}
+if ('ResizeObserver' in window) { const ro = new ResizeObserver(measureChrome); ro.observe($('.progress')); ro.observe($('.bar')); }
+window.addEventListener('resize', measureChrome);
+
 /* ---------- التشغيل ---------- */
 readHash();
 renderAll();
 setAuthTab('in');
+measureChrome();
 el.card.classList.add('is-loaded');
 el.body.classList.remove('is-loading');

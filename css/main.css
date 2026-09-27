@@ -51,6 +51,8 @@
   --font-quran: 'Amiri', serif;
   --font-num: 'Noto Naskh Arabic', serif;
 
+  --chrome-top: 70px;
+  --chrome-bottom: 72px;
   --radius-card: 22px;
   --shadow-card: 0 12px 36px rgba(60, 50, 30, .12);
   --ease: cubic-bezier(.22, .61, .36, 1);
@@ -300,12 +302,12 @@ button { cursor: pointer; }
 .screen {
   position: relative; min-height: 100dvh;
   display: flex; flex-direction: column; justify-content: center; align-items: center;
-  padding: 90px 20px 110px; background: var(--page);
+  padding: calc(var(--chrome-top) + 16px) 20px calc(var(--chrome-bottom) + 16px); background: var(--page);
 }
 
 .card {
   width: 100%; max-width: min(720px, calc(100vw - 2 * (clamp(20px, 6vw, 90px) + 72px)));
-  max-height: calc(100dvh - 200px); min-height: 0;
+  max-height: calc(100dvh - var(--chrome-top) - var(--chrome-bottom) - 32px); min-height: 0;
   display: flex; flex-direction: column;
   background: var(--card); border: 1px solid rgba(185, 157, 89, .28); border-radius: var(--radius-card);
   box-shadow: var(--shadow-card); overflow: hidden; user-select: none;
@@ -693,10 +695,10 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 
   /* الرسائل */
   .progress__count { margin-top: 4px; font-size: 21px; }
-  .screen { padding: 88px 0 88px; background: var(--page-mobile); }
+  .screen { padding: calc(var(--chrome-top) + 12px) 0 calc(var(--chrome-bottom) + 12px); background: var(--page-mobile); }
   .card {
     width: calc(100vw - 24px); max-width: none; margin: 0 12px;
-    max-height: calc(100dvh - 170px); border-radius: 14px;
+    max-height: calc(100dvh - var(--chrome-top) - var(--chrome-bottom) - 24px); border-radius: 14px;
     border: 1px solid var(--gold-soft); box-shadow: 0 14px 34px rgba(60, 50, 30, .18);
   }
   .card__title { font-size: 21px; }
@@ -727,7 +729,6 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 
 @media (max-width: 520px) {
   .bar { gap: 16px; padding: 12px 60px; }
-  .screen { padding: 84px 0 84px; }
   .len { flex-basis: 100%; }
   .len__group { max-width: 100%; }
   .len__btn { padding: 9px 12px; font-size: 16px; }
@@ -735,7 +736,6 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 
 @media (max-width: 400px) {
   .bar { padding: 10px 56px; }
-  .screen { padding: 82px 0 82px; }
   .len__group { padding: 3px; gap: 2px; }
   .len__btn { padding: 8px 9px; font-size: 16px; }
 }
