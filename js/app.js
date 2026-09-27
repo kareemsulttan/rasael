@@ -36,6 +36,7 @@ const sizeField = k => ({ S: 'short', M: 'medium', L: 'long' })[k];
 const el = {
   body: document.body, intro: $('#intro'), stage: $('#stage'), card: $('#card'),
   title: $('#card-title'), cbody: $('#card-body'), scroll: $('#card-scroll'), cqr: $('#card-qr'),
+  track: $('#card-track'), thumb: $('#card-thumb'),
   segs: $('#segs'), counter: $('#counter'), hint: $('#hint'),
   next: $('[data-action="next"]'), prev: $('[data-action="prev"]'),
 };
@@ -95,6 +96,8 @@ function renderCardView(animate = false) {
   try { el.cqr.src = qrDataUrl(msgUrl(), 8, 2); } catch { el.cqr.src = 'images/qr-site.png'; }
   if (animate) { el.card.classList.remove('is-entering'); void el.card.offsetWidth; el.card.classList.add('is-entering'); }
   renderSegs(); renderBindings();
+  requestAnimationFrame(updateTrack);
+  document.fonts?.ready.then(() => requestAnimationFrame(updateTrack));
   $$('[data-list="size-bar"] [data-pick-size]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pickSize === state.len));
 }
 
@@ -336,6 +339,20 @@ function readHash() {
   return true;
 }
 
+/* ---------- مؤشر التمرير داخل البطاقة ---------- */
+function updateTrack() {
+  const s = el.scroll, over = s.scrollHeight - s.clientHeight;
+  el.track.hidden = over <= 4;
+  if (el.track.hidden) return;
+  // الهندسة من حاوية التمرير نفسها (المسار: top 16px + bottom 24px في CSS)
+  const trackH = Math.max(0, s.clientHeight - 40);
+  const thumbH = Math.min(trackH, Math.max(28, trackH * s.clientHeight / s.scrollHeight));
+  el.thumb.style.height = thumbH + 'px';
+  el.thumb.style.top = Math.max(0, (s.scrollTop / over) * (trackH - thumbH)) + 'px';
+}
+el.scroll.addEventListener('scroll', updateTrack, { passive: true });
+if ('ResizeObserver' in window) { const ro = new ResizeObserver(updateTrack); ro.observe(el.scroll); ro.observe(el.cbody); }
+
 /* ---------- قياس الشريطَين لتوسيط البطاقة ---------- */
 function measureChrome() {
   // --chrome-top ثابت في main.css؛ يُقاس الشريط السفلي فقط
@@ -349,5 +366,6 @@ readHash();
 renderAll();
 setAuthTab('in');
 measureChrome();
+document.fonts?.ready.then(updateTrack);
 el.card.classList.add('is-loaded');
 el.body.classList.remove('is-loading');
