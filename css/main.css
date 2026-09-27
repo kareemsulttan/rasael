@@ -726,9 +726,16 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 }
 
 @media (max-width: 520px) {
-  .bar { gap: 16px; padding: 14px 8px; }
+  .bar { gap: 16px; padding: 14px 60px; }
   .len { flex-basis: 100%; }
-  .len__btn { padding: 10px 16px; font-size: 18px; }
+  .len__group { max-width: 100%; }
+  .len__btn { padding: 9px 12px; font-size: 16px; }
+}
+
+@media (max-width: 400px) {
+  .bar { padding: 12px 56px; }
+  .len__group { padding: 3px; gap: 2px; }
+  .len__btn { padding: 8px 9px; font-size: 14px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
