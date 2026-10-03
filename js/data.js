@@ -8,13 +8,20 @@ export const SIZES = [
 ];
 
 // كل دين يشير إلى مجموعة رسائل (set)
+// key ثابت تُحفظ به الإحصاءات: لا تغيّره لدين موجود، واختر مفتاحًا جديدًا لأي دين يُضاف
 export const RELIGIONS = [
-  { name: 'الأديان الأخرى', set: 'general' },
-  { name: 'نصراني', set: 'christian' },
-  { name: 'ملحد', set: 'general' },
-  { name: 'هندوسي / وثني', set: 'hindu' },
-  { name: 'لاديني / ربوبي', set: 'atheist' },
+  { key: 'other', name: 'الأديان الأخرى', set: 'general' },
+  { key: 'christian', name: 'نصراني', set: 'christian' },
+  { key: 'atheist', name: 'ملحد', set: 'general' },
+  { key: 'hindu', name: 'هندوسي / وثني', set: 'hindu' },
+  { key: 'deist', name: 'لاديني / ربوبي', set: 'atheist' },
 ];
+
+// دول نموذج الاشتراك (رموز ISO)؛ تُعرض أسماؤها بالعربية تلقائيًا. NAMES لتسمية مخصّصة.
+export const COUNTRIES = {
+  CODES: 'AD AE AF AG AI AL AM AO AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GT GU GW GY HK HN HR HT HU ID IE IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW'.split(' '),
+  NAMES: { PS: 'فلسطين', XK: 'كوسوفو' },
+};
 
 export const LANGS = [
   ['العربية','AR'],['English','EN'],['Français','FR'],['Español','ES'],['हिन्दी','HI'],['नेपाली','NE'],['Português','PT'],['中文','ZH'],['日本語','JA'],['አማርኛ','AM'],['Kiswahili','SW'],['Tagalog','TL'],['Русский','RU'],['Italiano','IT'],['Deutsch','DE'],

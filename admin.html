@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>الإحصاءات — رسائل حوارية</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/admin.css">
+<script type="module" src="js/admin.js"></script>
+</head>
+<body class="admin">
+
+<header class="adm-top">
+  <a href="./" class="adm-top__logo"><img src="images/logo.png" width="575" height="192" alt="جمعية خدمة المحتوى الإسلامي باللغات"></a>
+  <h1 class="adm-top__title">الإحصاءات والمشتركون</h1>
+  <span class="adm-top__who" id="adm-who"></span>
+  <a href="./" class="adm-top__back">العودة إلى الموقع ←</a>
+</header>
+
+<main class="adm">
+  <!-- حالة الصفحة: تحميل / غير مسجّل / ليس مشرفًا / خطأ -->
+  <p class="adm-gate" id="adm-gate">جارٍ التحميل…</p>
+
+  <div id="adm-body" hidden>
+    <div class="adm-filters" role="group" aria-label="المدة">
+      <button class="adm-chip" data-days="7">آخر 7 أيام</button>
+      <button class="adm-chip" data-days="30" aria-pressed="true">آخر 30 يومًا</button>
+      <button class="adm-chip" data-days="90">آخر 90 يومًا</button>
+      <button class="adm-chip" data-days="0">كل المدة</button>
+    </div>
+
+    <div id="adm-content">
+      <section class="adm-kpis" id="adm-kpis" aria-label="الأرقام الرئيسية"></section>
+
+      <section class="adm-card">
+        <h2 class="adm-card__title">الزوار يوميًا</h2>
+        <p class="adm-card__sub">عدد الزوار المختلفين في كل يوم (بتوقيت الرياض)</p>
+        <div class="adm-chart" id="adm-daily"></div>
+        <details class="adm-tableview">
+          <summary>عرض الأرقام كجدول</summary>
+          <div id="adm-daily-table"></div>
+        </details>
+      </section>
+
+      <div class="adm-grid">
+        <section class="adm-card"><h2 class="adm-card__title">دين المدعو</h2><p class="adm-card__sub">عند بدء الرسائل</p><div id="adm-rel"></div></section>
+        <section class="adm-card"><h2 class="adm-card__title">حجم الرسائل</h2><p class="adm-card__sub">عند بدء الرسائل</p><div id="adm-size"></div></section>
+        <section class="adm-card"><h2 class="adm-card__title">المشاركة</h2><p class="adm-card__sub">مشاركة ونسخ وتحميل الرسائل</p><div id="adm-channel"></div></section>
+        <section class="adm-card"><h2 class="adm-card__title">الأجهزة</h2><p class="adm-card__sub">عدد الزوار حسب نوع الجهاز</p><div id="adm-device"></div></section>
+        <section class="adm-card"><h2 class="adm-card__title">لغة الواجهة</h2><p class="adm-card__sub">اللغة المختارة عند بدء الرسائل</p><div id="adm-lang"></div></section>
+        <section class="adm-card"><h2 class="adm-card__title">دول المشتركين</h2><p class="adm-card__sub">كل المشتركين، بلا تقييد بالمدة</p><div id="adm-countries"></div></section>
+      </div>
+
+      <section class="adm-card">
+        <h2 class="adm-card__title">الرسائل</h2>
+        <p class="adm-card__sub">القرّاء: عدد الزوار الذين وصلوا إلى الرسالة. تناقصهم مع التسلسل يبيّن أين يتوقف الدعاة.</p>
+        <div class="adm-tabs" id="adm-rel-tabs" role="tablist"></div>
+        <div class="adm-scroll"><table class="adm-table" id="adm-messages"></table></div>
+      </section>
+
+      <section class="adm-card">
+        <div class="adm-card__head">
+          <div>
+            <h2 class="adm-card__title">المشتركون <span class="adm-count" id="adm-users-count"></span></h2>
+            <p class="adm-card__sub">النشاط: مجموع ما سجّله المشترك من قراءة ومشاركة منذ اشتراكه</p>
+          </div>
+          <div class="adm-tools">
+            <input class="adm-search" id="adm-search" type="search" placeholder="بحث بالاسم أو البريد أو الدولة">
+            <button class="adm-btn" id="adm-csv">تصدير CSV</button>
+          </div>
+        </div>
+        <div class="adm-scroll"><table class="adm-table" id="adm-users"></table></div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<div class="adm-tip" id="adm-tip" role="tooltip" hidden></div>
+</body>
+</html>

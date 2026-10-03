@@ -1,7 +1,9 @@
 // منطق الصفحة: الحالة، التنقّل بين الرسائل، القوائم، المشاركة، والتفضيلات.
-import { MESSAGES, RELIGIONS, LANGS, GUIDE, SIZES } from './data.js';
+import { MESSAGES, RELIGIONS, LANGS, GUIDE, SIZES, COUNTRIES } from './data.js';
 import { qrDataUrl } from './qr.js';
 import { renderCard, segmentsFromHtml } from './card.js';
+import * as auth from './auth.js';
+import { track } from './track.js';
 
 /* ---------- أدوات صغيرة ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -22,6 +24,7 @@ const state = {
   introDark: store.get('om-pref-idark') !== '0',
   lang: 0, step: 1,
   intro: true,
+  user: null, admin: false,
 };
 const msgs = () => MESSAGES[RELIGIONS[state.rel].set];
 const current = () => msgs()[state.cur];
@@ -56,6 +59,12 @@ function renderBindings() {
   bind('intro-theme-icon', n => n.textContent = state.introDark ? '☀' : '☾');
   bind('intro-theme-label', n => n.textContent = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن');
   bind('card-title', n => n.textContent = current().title);
+  const authLabel = state.user ? 'حسابي' : 'الدخول / الاشتراك';
+  bind('auth-label', n => n.textContent = authLabel);
+  bind('auth-btn', n => { n.dataset.tip = authLabel; n.setAttribute('aria-label', authLabel); });
+  bind('auth-name', n => n.textContent = state.user?.user_metadata?.full_name || '');
+  bind('auth-email', n => n.textContent = state.user?.email || '');
+  bind('admin-link', n => n.hidden = !state.admin);
   el.body.dataset.theme = state.dark ? 'dark' : 'light';
   el.intro.dataset.theme = state.introDark ? 'dark' : 'light';
 }
@@ -99,6 +108,17 @@ function renderCardView(animate = false) {
   requestAnimationFrame(updateTrack);
   document.fonts?.ready.then(() => requestAnimationFrame(updateTrack));
   $$('[data-list="size-bar"] [data-pick-size]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pickSize === state.len));
+  trackView();
+}
+
+/* ---------- الإحصاءات (track.js) ---------- */
+const msgRef = () => ({ rel: RELIGIONS[state.rel].key, msg: state.cur + 1, title: current().title });
+let lastView = '';
+// تُحسب قراءة الرسالة مرة عند ظهورها، لا عند تغيير حجمها
+function trackView() {
+  const key = `${state.rel}:${state.cur}`;
+  if (state.intro || key === lastView) return;
+  lastView = key; track('view', { ...msgRef(), size: state.len });
 }
 
 function renderGuide() {
@@ -166,6 +186,8 @@ function start() {
   state.intro = false; el.intro.hidden = true; closeIntroMenu();
   history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
   showHint();
+  track('start', { rel: RELIGIONS[state.rel].key, size: state.len, lang: LANGS[state.lang][1] });
+  trackView();
 }
 function showHint() {
   clearTimeout(hintT1); clearTimeout(hintT2);
@@ -174,7 +196,7 @@ function showHint() {
   hintT2 = setTimeout(hideHint, 3650);
 }
 function hideHint() { clearTimeout(hintT1); clearTimeout(hintT2); el.hint.classList.remove('is-on', 'is-out'); }
-function goHome() { state.intro = true; el.intro.hidden = false; hideHint(); closePops(); closeMenu(); history.replaceState(null, '', location.pathname); }
+function goHome() { state.intro = true; el.intro.hidden = false; lastView = ''; hideHint(); closePops(); closeMenu(); history.replaceState(null, '', location.pathname); }
 
 /* ---------- السحب ---------- */
 let drag = null, lastDragEnd = 0;
@@ -232,8 +254,10 @@ async function copyText(btn) {
   const { title, text } = cardText();
   try { await navigator.clipboard.writeText(title + '\n\n' + text); } catch {}
   btn.classList.add('is-ok'); setTimeout(() => btn.classList.remove('is-ok'), 1600);
+  track('copy', msgRef());
 }
 async function downloadCard() {
+  track('download', msgRef());
   const { dataUrl } = await generateCard();
   const a = document.createElement('a'); a.href = dataUrl; a.download = (current().title || 'رسالة') + '.png'; a.click();
 }
@@ -258,24 +282,88 @@ async function shareNative(e) {
   else window.open(href, '_blank', 'noopener');
 }
 
-/* ---------- الملاحظات والدخول ---------- */
+/* ---------- الملاحظات ---------- */
 $('#feedback-form').addEventListener('submit', e => {
   e.preventDefault(); const f = new FormData(e.target);
   const subject = encodeURIComponent('ملاحظة على رسالة: ' + current().title);
   const body = encodeURIComponent(`${f.get('text') || ''}\n\n— ${f.get('name') || ''}${f.get('email') ? ' <' + f.get('email') + '>' : ''}\n${msgUrl()}`);
   location.href = `mailto:info@islamiccontent.sa?subject=${subject}&body=${body}`;
   $('#feedback').hidden = true; e.target.reset();
+  track('feedback', msgRef());
 });
-function setAuthTab(tab) {
-  $$('[data-auth-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.authTab === tab));
-  $$('[data-auth-only]').forEach(n => n.hidden = n.dataset.authOnly !== tab);
-  bind('auth-cta', n => n.textContent = tab === 'up' ? 'إنشاء حساب' : 'دخول');
+
+/* ---------- الحسابات (Supabase عبر auth.js) ---------- */
+const AUTH_CTA = { in: 'دخول', up: 'إنشاء حساب', forgot: 'إرسال رابط الاستعادة', reset: 'حفظ كلمة المرور' };
+const AUTH_TITLE = { forgot: 'استعادة كلمة المرور', reset: 'كلمة مرور جديدة', account: 'حسابي' };
+let authMode = 'in';
+function setAuthMode(mode, msg = '', ok = false) {
+  authMode = mode;
+  $$('[data-auth-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.authTab === mode));
+  $$('[data-auth-only]').forEach(n => n.hidden = !n.dataset.authOnly.split(' ').includes(mode));
+  $('#auth-pass').autocomplete = mode === 'in' ? 'current-password' : 'new-password';
+  bind('auth-cta', n => n.textContent = AUTH_CTA[mode] || '');
+  bind('auth-title', n => n.textContent = AUTH_TITLE[mode] || '');
+  authMsg(msg, ok);
 }
-function openAuth() {
+function authMsg(text, ok = false) {
+  const m = $('#auth-msg'); m.textContent = text; m.hidden = !text; m.classList.toggle('is-ok', ok);
+}
+function openAuth(mode = state.user ? 'account' : 'in', msg = '', ok = false) {
+  setAuthMode(mode, msg, ok);
   $('#auth').hidden = false; closeMenu(); closeIntroMenu();
   $('#auth-form').classList.toggle('auth--dark', state.intro ? state.introDark : state.dark);
+  auth.preload();
 }
-$('#auth-form').addEventListener('submit', e => { e.preventDefault(); $('#auth').hidden = true; });
+function renderCountries() {
+  let names; try { names = new Intl.DisplayNames(['ar'], { type: 'region' }); } catch {}
+  const list = COUNTRIES.CODES.map(c => [c, COUNTRIES.NAMES[c] || names?.of(c) || c]).sort((a, b) => a[1].localeCompare(b[1], 'ar'));
+  $('#auth-country').append(...list.map(([c, n]) => new Option(n, c)));
+}
+function authInvalid() {
+  const email = $('#auth-email'), pass = $('#auth-pass').value, isNew = authMode === 'up' || authMode === 'reset';
+  if (authMode === 'up' && !$('#auth-name').value.trim()) return 'اكتب اسمك.';
+  if (authMode === 'up' && !$('#auth-country').value) return 'اختر دولتك.';
+  if (authMode !== 'reset' && (!email.value.trim() || !email.validity.valid)) return 'اكتب بريدًا إلكترونيًا صحيحًا.';
+  if (authMode === 'in' && !pass) return 'اكتب كلمة المرور.';
+  if (isNew && pass.length < 8) return 'كلمة المرور 8 أحرف على الأقل.';
+  if (isNew && pass !== $('#auth-pass2').value) return 'كلمتا المرور غير متطابقتين.';
+  return '';
+}
+const AUTH_SUBMIT = {
+  in: async f => { await auth.signIn(f.email, f.pass); $('#auth').hidden = true; },
+  up: async f => {
+    const { session } = await auth.signUp(f);
+    if (session) $('#auth').hidden = true;
+    else authMsg(`أرسلنا رسالة تأكيد إلى ${f.email}، افتحها لتفعيل حسابك.`, true);
+  },
+  forgot: async f => { await auth.sendReset(f.email); authMsg('إن كان البريد مسجّلًا فسيصلك رابط لتعيين كلمة مرور جديدة.', true); },
+  reset: async f => { await auth.setPassword(f.pass); setAuthMode('account', 'حُفظت كلمة المرور الجديدة.', true); },
+};
+$('#auth-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const bad = authInvalid(); if (bad) return authMsg(bad);
+  const btn = $('#auth-form [type="submit"]');
+  const f = { name: $('#auth-name').value.trim(), country: $('#auth-country').value, email: $('#auth-email').value.trim(), pass: $('#auth-pass').value };
+  btn.disabled = true; authMsg('');
+  try { await AUTH_SUBMIT[authMode](f); $('#auth-pass').value = $('#auth-pass2').value = ''; }
+  catch (err) { authMsg(auth.errorText(err)); }
+  finally { btn.disabled = false; }
+});
+async function signOut() {
+  try { await auth.signOut(); $('#auth').hidden = true; } catch (err) { authMsg(auth.errorText(err)); }
+}
+let profileFor = null;
+auth.onUser(user => {
+  state.user = user;
+  if (!user) { state.admin = false; profileFor = null; }
+  else if (profileFor !== user.id) {
+    // صلاحية المشرف من جدول profiles، مرة لكل مستخدم
+    profileFor = user.id;
+    auth.myProfile().then(p => { state.admin = !!p?.is_admin; renderBindings(); }).catch(() => {});
+  }
+  renderBindings();
+  if (!user && authMode === 'account') $('#auth').hidden = true;
+});
 
 /* ---------- الأحداث ---------- */
 const actions = {
@@ -292,8 +380,10 @@ const actions = {
   'msg-qr': () => { $('#msg-qr-img').src = el.cqr.src; $('#msg-qr').hidden = false; },
   'close-msg-qr': () => $('#msg-qr').hidden = true,
   'site-qr': () => { $('#site-qr').hidden = false; closeIntroMenu(); }, 'close-site-qr': () => $('#site-qr').hidden = true,
-  auth: openAuth, 'close-auth': () => $('#auth').hidden = true,
-  'auth-swap': () => setAuthTab($('[data-auth-tab="in"]').getAttribute('aria-selected') === 'true' ? 'up' : 'in'),
+  auth: () => openAuth(), 'close-auth': () => $('#auth').hidden = true,
+  'auth-swap': () => setAuthMode(authMode === 'in' ? 'up' : 'in'),
+  'auth-forgot': () => setAuthMode('forgot'), 'auth-in': () => setAuthMode('in'),
+  'sign-out': signOut,
   'hide-hint': hideHint,
 };
 
@@ -306,8 +396,8 @@ document.addEventListener('click', e => {
   const pickLang = t.closest('[data-pick-lang]'); if (pickLang) { setLang(+pickLang.dataset.pickLang); return; }
   const pickSize = t.closest('[data-pick-size]'); if (pickSize) { setLen(pickSize.dataset.pickSize, pickSize.dataset.scope); return; }
   const go = t.closest('[data-go]'); if (go) { goTo(+go.dataset.go); return; }
-  const tab = t.closest('[data-auth-tab]'); if (tab) { setAuthTab(tab.dataset.authTab); return; }
-  const soc = t.closest('[data-share]'); if (soc) { shareNative(e); return; }
+  const tab = t.closest('[data-auth-tab]'); if (tab) { setAuthMode(tab.dataset.authTab); return; }
+  const soc = t.closest('[data-share]'); if (soc) { track('share', { ...msgRef(), channel: soc.dataset.share }); shareNative(e); return; }
 
   const act = t.closest('[data-action]');
   if (act) {
@@ -364,8 +454,19 @@ window.addEventListener('resize', measureChrome);
 /* ---------- التشغيل ---------- */
 readHash();
 renderAll();
-setAuthTab('in');
+setAuthMode('in');
 measureChrome();
 document.fonts?.ready.then(updateTrack);
 el.card.classList.add('is-loaded');
 el.body.classList.remove('is-loading');
+
+// الحسابات: تُخفى أزرار الدخول ما لم تُضبط إعدادات Supabase في config.js
+if (!auth.authEnabled) $$('[data-action="auth"]').forEach(n => n.hidden = true);
+renderCountries();
+track('visit');
+auth.init().then(() => {
+  const cb = auth.callback; if (!cb || !auth.authEnabled) return;
+  if (cb.error) openAuth('in', auth.errorText({ code: cb.error }));
+  else if (cb.type === 'recovery') openAuth('reset');
+  else openAuth('account', 'تم تأكيد بريدك، أهلًا بك.', true);
+}).catch(err => { if (auth.callback) openAuth('in', auth.errorText(err)); });

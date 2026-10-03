@@ -41,7 +41,7 @@
         </button>
         <div class="pop pop--down pop--grid" id="pop-intro-lang" data-list="lang" role="listbox" hidden></div>
       </div>
-      <button class="pill pill--gold" data-action="auth">الدخول / الاشتراك</button>
+      <button class="pill pill--gold" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
       <button class="mode-btn" data-action="intro-theme" aria-label="تبديل الوضع"><span data-bind="intro-theme-icon">☀</span></button>
     </div>
   </div>
@@ -79,7 +79,7 @@
       <button class="drawer__close" data-action="close-intro-menu" aria-label="إغلاق"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <a href="#guide" class="drawer__item" data-action="guide">توجيهات عامة للداعية</a>
-    <button class="drawer__item" data-action="auth">الدخول / الاشتراك</button>
+    <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
     <button class="drawer__item" data-action="intro-theme"><span data-bind="intro-theme-label"></span><span class="glyph" data-bind="intro-theme-icon"></span></button>
     <button class="drawer__item" data-action="toggle-sub" data-sub="intro-lang-sub"><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
     <div class="drawer__sub drawer__sub--chips" id="intro-lang-sub" data-list="lang-chips" hidden></div>
@@ -160,7 +160,7 @@
           <div class="pop pop--lang pop--grid pop--down" id="pop-bar-lang" data-list="lang" role="listbox" hidden style="top:auto;bottom:calc(100% + 10px)"></div>
         </div>
         <button class="icon-btn tip" data-tip="الوضع الداكن" data-action="theme" data-bind="theme-btn" aria-label="تبديل الوضع"></button>
-        <button class="icon-btn icon-btn--gold tip" data-tip="الدخول / الاشتراك" data-action="auth" aria-label="الدخول / الاشتراك"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+        <button class="icon-btn tip" data-tip="الدخول / الاشتراك" data-action="auth" data-bind="auth-btn" aria-label="الدخول / الاشتراك"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
       </div>
     </div>
   </div>
@@ -182,7 +182,7 @@
   </div>
   <a href="#" class="drawer__item" data-action="home">الرئيسية</a>
   <a href="#guide" class="drawer__item" data-action="guide">توجيهات عامة للداعية</a>
-  <button class="drawer__item" data-action="auth">الدخول / الاشتراك</button>
+  <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
   <button class="drawer__item" data-action="theme"><span data-bind="theme-label"></span><span class="glyph" data-bind="theme-icon"></span></button>
   <button class="drawer__item" data-action="toggle-sub" data-sub="menu-rel-sub"><span>دين المدعو <span class="sub">· <span data-bind="rel-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub" id="menu-rel-sub" data-list="rel" hidden></div>
@@ -257,30 +257,46 @@
   </div>
 </div>
 
-<!-- الدخول / الاشتراك -->
+<!-- الدخول / الاشتراك / الحساب — الأوضاع: in · up · forgot · reset · account -->
 <div class="overlay overlay--auth" id="auth" data-action="close-auth" hidden>
-  <form class="auth" id="auth-form" data-stop>
+  <form class="auth" id="auth-form" data-stop novalidate>
     <div class="auth__head">
-      <div class="auth__tabs" role="tablist">
+      <div class="auth__tabs" role="tablist" data-auth-only="in up">
         <button type="button" class="auth__tab" data-auth-tab="in" role="tab" aria-selected="true">الدخول</button>
         <button type="button" class="auth__tab" data-auth-tab="up" role="tab" aria-selected="false">مستخدم جديد</button>
       </div>
+      <h3 class="auth__title" data-bind="auth-title" data-auth-only="forgot reset account" hidden></h3>
       <button type="button" class="auth__close" data-action="close-auth" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div data-auth-only="up" hidden>
       <label for="auth-name">الاسم</label>
       <input id="auth-name" type="text" placeholder="اسمك الكامل" autocomplete="name">
+      <label for="auth-country">الدولة</label>
+      <select id="auth-country" autocomplete="country"><option value="">اختر دولتك</option></select>
     </div>
-    <label for="auth-email">البريد الإلكتروني</label>
-    <input id="auth-email" type="email" placeholder="name@example.com" dir="ltr" autocomplete="email">
-    <label for="auth-pass">كلمة المرور</label>
-    <input id="auth-pass" type="password" placeholder="••••••••" dir="ltr" autocomplete="current-password">
-    <div data-auth-only="up" hidden>
+    <div data-auth-only="in up forgot">
+      <label for="auth-email">البريد الإلكتروني</label>
+      <input id="auth-email" type="email" placeholder="name@example.com" dir="ltr" autocomplete="email">
+    </div>
+    <div data-auth-only="in up reset">
+      <label for="auth-pass">كلمة المرور</label>
+      <input id="auth-pass" type="password" placeholder="••••••••" dir="ltr" autocomplete="current-password">
+    </div>
+    <a href="#" class="auth__forgot" data-auth-only="in" data-action="auth-forgot">نسيت كلمة المرور؟</a>
+    <div data-auth-only="up reset" hidden>
       <label for="auth-pass2">إعادة كلمة المرور</label>
       <input id="auth-pass2" type="password" placeholder="••••••••" dir="ltr" autocomplete="new-password">
     </div>
-    <button type="submit" class="auth__submit" data-bind="auth-cta">دخول</button>
+    <div class="auth__account" data-auth-only="account" hidden>
+      <strong data-bind="auth-name"></strong>
+      <span dir="ltr" data-bind="auth-email"></span>
+    </div>
+    <p class="auth__msg" id="auth-msg" role="status" hidden></p>
+    <button type="submit" class="auth__submit" data-bind="auth-cta" data-auth-only="in up forgot reset">دخول</button>
+    <div data-auth-only="account" hidden><a class="auth__submit auth__admin" href="admin.html" data-bind="admin-link" hidden>الإحصاءات والمشتركون</a></div>
+    <button type="button" class="auth__submit auth__submit--ghost" data-action="sign-out" data-auth-only="account" hidden>تسجيل الخروج</button>
     <div class="auth__foot" data-auth-only="in">مستخدم جديد؟ <a href="#" data-action="auth-swap">اشترك</a></div>
+    <div class="auth__foot" data-auth-only="forgot" hidden><a href="#" data-action="auth-in">العودة إلى الدخول</a></div>
   </form>
 </div>
 
