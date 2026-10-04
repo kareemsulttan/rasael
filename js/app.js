@@ -284,7 +284,8 @@ async function downloadCard() {
 }
 function openShare() {
   const { title, text } = cardText();
-  $('#share-text').textContent = text;
+  // المعاينة بتنسيق البطاقة نفسه (الآيات بخط Amiri وعلامة الآية حول رقمها)؛ المُرسَل يبقى نصًا
+  $('#share-text').innerHTML = current()[sizeField(state.len)];
   const payload = encodeURIComponent(title + '\n\n' + text), page = encodeURIComponent(msgUrl());
   const links = {
     wa: 'https://wa.me/?text=' + payload,
