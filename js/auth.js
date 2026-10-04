@@ -54,6 +54,8 @@ const call = fn => db(c => fn(c.auth));
 export const getUser = async () => (await call(a => a.getSession())).session?.user ?? null;
 export const myProfile = () => db(c => c.from('profiles').select('full_name, country, is_admin').maybeSingle());
 export const rpc = (name, args) => db(c => c.rpc(name, args));
+// استعلام على جدول: from(c => c.from('invitees').select(...))؛ يرمي الخطأ إن وُجد
+export const from = db;
 export const signIn = (email, password) => call(a => a.signInWithPassword({ email, password }));
 export async function signUp({ name, country, email, pass }) {
   const data = await call(a => a.signUp({ email, password: pass, options: { data: { full_name: name, country }, emailRedirectTo: SITE_URL } }));
