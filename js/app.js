@@ -80,8 +80,6 @@ function renderBindings() {
     if (!state.user) { n.innerHTML = n.userIcon; return; }
     n.replaceChildren(avatar('auth-initial'));
   });
-  // شارة صغيرة على زر القائمة في الجوال تدل على أن الزائر مسجّل
-  bind('menu-avatar', n => { n.hidden = !state.user; n.textContent = initial; });
   bind('auth-name', n => n.textContent = userName);
   bind('auth-email', n => n.textContent = state.user?.email || '');
   bind('admin-link', n => n.hidden = !state.admin);
