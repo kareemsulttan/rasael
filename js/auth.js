@@ -55,8 +55,12 @@ export const getUser = async () => (await call(a => a.getSession())).session?.us
 export const myProfile = () => db(c => c.from('profiles').select('full_name, country, is_admin').maybeSingle());
 export const rpc = (name, args) => db(c => c.rpc(name, args));
 export const signIn = (email, password) => call(a => a.signInWithPassword({ email, password }));
-export const signUp = ({ name, country, email, pass }) =>
-  call(a => a.signUp({ email, password: pass, options: { data: { full_name: name, country }, emailRedirectTo: SITE_URL } }));
+export async function signUp({ name, country, email, pass }) {
+  const data = await call(a => a.signUp({ email, password: pass, options: { data: { full_name: name, country }, emailRedirectTo: SITE_URL } }));
+  // البريد المسجّل والمؤكَّد من قبل: يردّ Supabase بنجاح شكلي بلا هويات ولا يرسل رسالة
+  if (data.user && !data.session && data.user.identities?.length === 0) throw { code: 'user_already_exists' };
+  return data;
+}
 export const signOut = () => call(a => a.signOut({ scope: 'local' }));
 export const sendReset = email => call(a => a.resetPasswordForEmail(email, { redirectTo: SITE_URL }));
 export const setPassword = password => call(a => a.updateUser({ password }));
