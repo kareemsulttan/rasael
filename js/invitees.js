@@ -79,9 +79,12 @@ export function renderShare() {
   const lastOf = inv => progress(inv).last;
   const people = [...list].sort((a, b) => sameSet(b) - sameSet(a) || lastOf(b).localeCompare(lastOf(a)));
   const names = people.filter(p => selected.has(p.id)).map(p => p.name);
+  // الاختيار لا يرسل لأحد: يسجّل فقط، والمستلم يُختار داخل واتساب أو غيره
   const note = flash ? h('div', { class: 'who__note' + (flash.err ? ' is-err' : ' is-ok') }, flash.text)
-    : names.length ? h('div', { class: 'who__note' }, `عند الإرسال تُسجَّل الرسالة ${c.msg} لـ${joinNames(names)}`)
-    : !list.length ? h('div', { class: 'who__note' }, 'أضف من ترسل له، ليتذكّر الموقع أين وصلتَ معه.') : null;
+    : h('div', { class: 'who__note' },
+      names.length ? `ستُسجَّل الرسالة ${c.msg} لـ${joinNames(names)} عند المشاركة. اختر جهة الاتصال داخل التطبيق كالمعتاد.`
+      : list.length ? 'اختر من سترسلها له ليتذكّر الموقع أين وصلتَ معه. الاختيار للتسجيل فقط، ولا يرسل شيئًا.'
+      : 'أضف من ترسل له، ليتذكّر الموقع أين وصلتَ معه.');
   box.replaceChildren(
     h('div', { class: 'who__label' }, 'لمن ترسلها؟ ', h('span', {}, '(اختياري)')),
     h('div', { class: 'who__chips' },
