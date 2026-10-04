@@ -338,11 +338,15 @@ button { cursor: pointer; }
 .card__scroll {
   flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; direction: ltr;
   padding: 16px 4px 24px 22px; margin: 0 6px 6px 0; touch-action: pan-y;
-  scrollbar-width: thin; scrollbar-color: #d8cfbc transparent;
+  scrollbar-width: none;
 }
-.card__scroll::-webkit-scrollbar { width: 4px; }
-.card__scroll::-webkit-scrollbar-thumb { background: #d8cfbc; border-radius: 2px; }
-.card__scroll::-webkit-scrollbar-track { background: transparent; }
+.card__scroll::-webkit-scrollbar { display: none; }
+/* مؤشر التمرير: ظاهر دائمًا ما دام في النص بقية (الجوال يخفي شريط المتصفح)، ويُسحب بالفأرة */
+.card__view { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
+.card__track { position: absolute; top: 16px; bottom: 30px; right: 8px; width: 4px; border-radius: 2px; background: rgba(185, 157, 89, .12); }
+.card__thumb { position: absolute; top: 0; left: 0; right: 0; border-radius: 2px; background: #d8cfbc; cursor: grab; touch-action: none; }
+.card__thumb::before { content: ''; position: absolute; inset: 0 -6px; }
+.card__thumb.is-dragging { cursor: grabbing; background: var(--gold); }
 
 .card__body { direction: rtl; padding: 0 18px 0 0; }
 .card__body p { margin: 0; line-height: 2.1; color: var(--text); text-wrap: pretty; }
@@ -695,7 +699,8 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 [data-theme="dark"] .card__body p { color: #e3dccd; }
 [data-theme="dark"] .card__body .q { color: #8fcf9f; }
 [data-theme="dark"] .card__body .ref { color: var(--muted-2); }
-[data-theme="dark"] .card__scroll { scrollbar-color: #3a4453 transparent; }
+[data-theme="dark"] .card__thumb { background: #3a4453; }
+[data-theme="dark"] .card__track { background: rgba(185, 157, 89, .08); }
 [data-theme="dark"] .card__foot { border-top-color: rgba(185, 157, 89, .18); }
 [data-theme="dark"] .card .icon-btn { background: var(--navy-btn); border-color: var(--gold-soft); }
 [data-theme="dark"] .card .icon-btn.is-ok { background: rgba(127, 176, 105, .25); border-color: var(--ok); }

@@ -214,7 +214,7 @@ function goHome() { state.intro = true; el.intro.hidden = false; lastView = ''; 
 /* ---------- السحب ---------- */
 let drag = null, lastDragEnd = 0;
 el.stage.addEventListener('pointerdown', e => {
-  if (e.target.closest('button, a, img, input, textarea')) return;
+  if (e.target.closest('button, a, img, input, textarea, .card__track')) return;
   drag = { x: e.clientX, y: e.clientY, axis: null, dx: 0 };
   hideHint();
 });
@@ -559,6 +559,17 @@ function updateTrack() {
   el.thumb.style.top = Math.max(0, (s.scrollTop / over) * (trackH - thumbH)) + 'px';
 }
 el.scroll.addEventListener('scroll', updateTrack, { passive: true });
+// سحب المؤشر يمرّر النص بالنسبة نفسها
+el.thumb.addEventListener('pointerdown', e => {
+  const s = el.scroll, y0 = e.clientY, top0 = s.scrollTop;
+  const ratio = (s.scrollHeight - s.clientHeight) / Math.max(1, el.track.clientHeight - el.thumb.offsetHeight);
+  const ac = new AbortController(), opt = { signal: ac.signal };
+  const up = () => { el.thumb.classList.remove('is-dragging'); ac.abort(); };
+  el.thumb.setPointerCapture(e.pointerId); el.thumb.classList.add('is-dragging'); e.preventDefault();
+  el.thumb.addEventListener('pointermove', ev => { s.scrollTop = top0 + (ev.clientY - y0) * ratio; }, opt);
+  el.thumb.addEventListener('pointerup', up, opt);
+  el.thumb.addEventListener('pointercancel', up, opt);
+});
 if ('ResizeObserver' in window) { const ro = new ResizeObserver(updateTrack); ro.observe(el.scroll); ro.observe(el.cbody); }
 
 /* ---------- قياس الشريطَين لتوسيط البطاقة ---------- */
