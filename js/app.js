@@ -62,16 +62,26 @@ function renderBindings() {
   bind('card-title', n => n.textContent = current().title);
   const authLabel = state.user ? 'حسابي' : 'الدخول / الاشتراك';
   const userName = state.user?.user_metadata?.full_name?.trim() || '';
-  bind('auth-label', n => n.textContent = authLabel);
+  const initial = state.user ? [...(userName || state.user.email || '؟')][0].toUpperCase() : '';
+  const avatar = cls => Object.assign(document.createElement('span'), { className: cls, textContent: initial });
+  // في القائمة: دائرة الحرف الأول والاسم، وتحته «حسابي»
+  bind('auth-label', n => {
+    if (!state.user) return n.textContent = authLabel;
+    const text = Object.assign(document.createElement('span'), { className: 'drawer__who' });
+    text.append(Object.assign(document.createElement('span'), { textContent: userName || state.user.email }),
+      Object.assign(document.createElement('span'), { className: 'sub', textContent: authLabel }));
+    n.replaceChildren(avatar('avatar'), text);
+  });
   // بعد الدخول: الاسم في التلميح، وأول حرف منه مكان الأيقونة
   bind('auth-btn', n => {
     const tip = state.user ? userName || authLabel : authLabel;
     n.dataset.tip = tip; n.setAttribute('aria-label', tip);
     n.userIcon ??= n.innerHTML;
     if (!state.user) { n.innerHTML = n.userIcon; return; }
-    const initial = [...(userName || state.user.email || '؟')][0].toUpperCase();
-    n.replaceChildren(Object.assign(document.createElement('span'), { className: 'auth-initial', textContent: initial }));
+    n.replaceChildren(avatar('auth-initial'));
   });
+  // شارة صغيرة على زر القائمة في الجوال تدل على أن الزائر مسجّل
+  bind('menu-avatar', n => { n.hidden = !state.user; n.textContent = initial; });
   bind('auth-name', n => n.textContent = userName);
   bind('auth-email', n => n.textContent = state.user?.email || '');
   bind('admin-link', n => n.hidden = !state.admin);
