@@ -3,7 +3,7 @@ import { MESSAGES, RELIGIONS, LANGS, GUIDE, SIZES, COUNTRIES } from './data.js';
 import { qrDataUrl } from './qr.js';
 import { renderCard, segmentsFromHtml } from './card.js';
 import * as auth from './auth.js';
-import { track } from './track.js';
+import { track, insertRow } from './track.js';
 
 /* ---------- أدوات صغيرة ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -296,13 +296,44 @@ async function shareNative(e) {
 }
 
 /* ---------- الملاحظات ---------- */
-$('#feedback-form').addEventListener('submit', e => {
-  e.preventDefault(); const f = new FormData(e.target);
-  const subject = encodeURIComponent('ملاحظة على رسالة: ' + current().title);
-  const body = encodeURIComponent(`${f.get('text') || ''}\n\n— ${f.get('name') || ''}${f.get('email') ? ' <' + f.get('email') + '>' : ''}\n${msgUrl()}`);
-  location.href = `mailto:info@islamiccontent.sa?subject=${subject}&body=${body}`;
-  $('#feedback').hidden = true; e.target.reset();
-  track('feedback', msgRef());
+// تُحفظ الملاحظة في جدول feedback، ويقرؤها المشرف في صفحة الإحصاءات
+function feedbackMsg(text, ok = false) {
+  const m = $('#feedback-msg'); m.textContent = text; m.hidden = !text; m.classList.toggle('is-ok', ok);
+}
+function openFeedback() {
+  const f = $('#feedback-form');
+  feedbackMsg('');
+  if (state.user) {   // المسجّل لا يحتاج إلى كتابة اسمه وبريده
+    f.elements.name.value ||= state.user.user_metadata?.full_name || '';
+    f.elements.email.value ||= state.user.email || '';
+  }
+  $('#feedback').hidden = false;
+  f.elements.text.focus();
+}
+$('#feedback-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const form = e.target, f = new FormData(form), body = String(f.get('text') || '').trim();
+  if (!body) return feedbackMsg('اكتب ملاحظتك أولًا.');
+  const name = String(f.get('name') || '').trim(), email = String(f.get('email') || '').trim();
+  if (!auth.authEnabled) {   // بلا Supabase: تُفتح رسالة بريد جاهزة كما كان
+    const subject = encodeURIComponent('ملاحظة على رسالة: ' + current().title);
+    location.href = `mailto:info@islamiccontent.sa?subject=${subject}&body=${encodeURIComponent(`${body}\n\n— ${name}${email ? ' <' + email + '>' : ''}\n${msgUrl()}`)}`;
+    $('#feedback').hidden = true; form.reset();
+    return;
+  }
+  const btn = $('#feedback-send');
+  btn.disabled = true; btn.textContent = 'جارٍ الإرسال…'; feedbackMsg('');
+  try {
+    await insertRow('feedback', { name: name || null, email: email || null, body, ...msgRef() });
+    form.reset();
+    feedbackMsg('وصلت ملاحظتك، شكرًا لك.', true);
+    track('feedback', msgRef());
+    setTimeout(() => { $('#feedback').hidden = true; feedbackMsg(''); }, 1600);
+  } catch (err) {
+    feedbackMsg(auth.errorText(err));
+  } finally {
+    btn.disabled = false; btn.textContent = 'إرسال';
+  }
 });
 
 /* ---------- الحسابات (Supabase عبر auth.js) ---------- */
@@ -462,7 +493,7 @@ const actions = {
   share: openShare, 'close-share': () => $('#share').hidden = true,
   copy: (btn) => copyText(btn), 'share-copy': (btn) => copyText(btn),
   download: downloadCard, 'share-download': downloadCard,
-  feedback: () => $('#feedback').hidden = false, 'close-feedback': () => $('#feedback').hidden = true,
+  feedback: openFeedback, 'close-feedback': () => $('#feedback').hidden = true,
   'msg-qr': () => { $('#msg-qr-img').src = el.cqr.src; $('#msg-qr').hidden = false; },
   'close-msg-qr': () => $('#msg-qr').hidden = true,
   'site-qr': () => { $('#site-qr').hidden = false; closeIntroMenu(); }, 'close-site-qr': () => $('#site-qr').hidden = true,

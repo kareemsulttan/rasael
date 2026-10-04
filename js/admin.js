@@ -1,5 +1,5 @@
-// صفحة الإحصاءات للمشرفين: تقرأ الأرقام المجمّعة من Supabase (admin_stats / admin_users).
-// الحماية الفعلية في قاعدة البيانات: الدالتان ترفضان أي حساب ليس مشرفًا.
+// صفحة الإحصاءات للمشرفين: تقرأ الأرقام المجمّعة من Supabase (admin_stats / admin_users / admin_feedback).
+// الحماية الفعلية في قاعدة البيانات: الدوال ترفض أي حساب ليس مشرفًا.
 import { RELIGIONS, MESSAGES, SIZES, LANGS, COUNTRIES } from './data.js';
 import * as auth from './auth.js';
 
@@ -32,7 +32,7 @@ const LABELS = {
 };
 
 /* ---------- الحالة ---------- */
-let days = 30, stats = null, users = [], relTab = RELIGIONS[0].key;
+let days = 30, stats = null, users = [], feedback = [], relTab = RELIGIONS[0].key;
 try { if (localStorage.getItem('om-pref-dark') === '1') document.body.dataset.theme = 'dark'; } catch {}
 
 function gate(text, linkText) {
@@ -212,18 +212,49 @@ function renderUsers() {
 $('#adm-search').addEventListener('input', renderUsers);
 
 // ملف CSV يفتح بالعربية في Excel؛ وتُعطَّل الصيغ في الخانات التي يكتبها المستخدمون
-function exportCsv() {
-  const cols = [
-    ['الاسم', u => u.full_name], ['البريد', u => u.email], ['الدولة', u => countryName(u.country)],
-    ['تاريخ الاشتراك', u => u.created_at?.slice(0, 10)], ['آخر دخول', u => u.last_sign_in_at?.slice(0, 10)],
-    ['البريد مؤكَّد', u => u.confirmed ? 'نعم' : 'لا'], ['النشاط', u => u.activity], ['مشرف', u => u.is_admin ? 'نعم' : 'لا'],
-  ];
+function exportCsv(name, cols, rows) {
   const cell = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"`; };
-  const csv = '﻿' + [cols.map(c => cell(c[0])), ...users.map(u => cols.map(c => cell(c[1](u))))].map(r => r.join(',')).join('\r\n');
-  const a = h('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), download: `المشتركون-${todayRiyadh()}.csv` });
+  const csv = '\ufeff' + [cols.map(c => cell(c[0])), ...rows.map(u => cols.map(c => cell(c[1](u))))].map(r => r.join(',')).join('\r\n');
+  const a = h('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), download: `${name}-${todayRiyadh()}.csv` });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-$('#adm-csv').addEventListener('click', exportCsv);
+$('#adm-csv').addEventListener('click', () => exportCsv('المشتركون', [
+  ['الاسم', u => u.full_name], ['البريد', u => u.email], ['الدولة', u => countryName(u.country)],
+  ['تاريخ الاشتراك', u => u.created_at?.slice(0, 10)], ['آخر دخول', u => u.last_sign_in_at?.slice(0, 10)],
+  ['البريد مؤكَّد', u => u.confirmed ? 'نعم' : 'لا'], ['النشاط', u => u.activity], ['مشرف', u => u.is_admin ? 'نعم' : 'لا'],
+], users));
+
+/* ---------- الملاحظات ---------- */
+const fbAbout = f => f.msg ? `${LABELS.rel(f.rel)} · ${f.msg}. ${f.title || ''}` : '—';
+function renderFeedback() {
+  const q = $('#adm-fb-search').value.trim().toLowerCase();
+  const rows = feedback.filter(f => !q || [f.body, f.name, f.email, f.title].some(v => (v || '').toLowerCase().includes(q)));
+  $('#adm-fb-count').textContent = `(${fmt(feedback.length)})`;
+  $('#adm-feedback').replaceChildren(
+    h('thead', {}, h('tr', {}, ...['التاريخ', 'الملاحظة', 'المرسل', 'حول رسالة', ''].map(t => h('th', {}, t)))),
+    h('tbody', {}, ...(rows.length ? rows.map(f => h('tr', {},
+      h('td', { class: 'num muted' }, fmtDate(f.created_at)),
+      h('td', { class: 'adm-fb__body' }, f.body),
+      h('td', {}, f.name || '—', f.is_user && h('span', { class: 'adm-tag adm-tag--gold' }, 'مشترك'),
+        f.email && h('div', { class: 'ltr muted' }, h('a', { href: 'mailto:' + f.email }, f.email))),
+      h('td', { class: 'muted' }, fbAbout(f)),
+      h('td', {}, h('button', { class: 'adm-del', 'data-del': f.id, 'aria-label': 'حذف الملاحظة', title: 'حذف' }, '×'))))
+    : [h('tr', {}, h('td', { colspan: 5, class: 'muted' }, feedback.length ? 'لا نتائج مطابقة.' : 'لا توجد ملاحظات بعد.'))])));
+}
+$('#adm-fb-search').addEventListener('input', renderFeedback);
+$('#adm-feedback').addEventListener('click', async e => {
+  const b = e.target.closest('[data-del]'); if (!b) return;
+  if (!confirm('حذف هذه الملاحظة نهائيًا؟')) return;
+  b.disabled = true;
+  try {
+    await auth.rpc('admin_delete_feedback', { feedback_id: +b.dataset.del });
+    feedback = feedback.filter(f => f.id !== +b.dataset.del); renderFeedback();
+  } catch (err) { b.disabled = false; alert(auth.errorText(err)); }
+});
+$('#adm-fb-csv').addEventListener('click', () => exportCsv('الملاحظات', [
+  ['التاريخ', f => f.created_at?.slice(0, 10)], ['الملاحظة', f => f.body], ['الاسم', f => f.name],
+  ['البريد', f => f.email], ['مشترك', f => f.is_user ? 'نعم' : 'لا'], ['حول رسالة', fbAbout],
+], feedback));
 
 /* ---------- التحميل ---------- */
 function renderStats() {
@@ -256,9 +287,9 @@ async function boot() {
     const user = await auth.getUser();
     if (!user) return gate('هذه الصفحة للمشرفين. سجّل الدخول بحساب مشرف من الموقع ثم عُد إليها.', 'الذهاب إلى الموقع');
     $('#adm-who').textContent = user.email;
-    [stats, users] = await Promise.all([auth.rpc('admin_stats', { days }), auth.rpc('admin_users')]);
+    [stats, users, feedback] = await Promise.all([auth.rpc('admin_stats', { days }), auth.rpc('admin_users'), auth.rpc('admin_feedback')]);
     $('#adm-gate').hidden = true; $('#adm-body').hidden = false;
-    renderStats(); renderUsers();
+    renderStats(); renderUsers(); renderFeedback();
   } catch (e) { fail(e); }
 }
 auth.onUser((user, event) => { if (event === 'SIGNED_OUT') gate('سُجّل الخروج من هذا الحساب.', 'الذهاب إلى الموقع'); });

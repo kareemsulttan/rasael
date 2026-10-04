@@ -15,15 +15,18 @@ const device = matchMedia('(pointer: coarse)').matches ? 'mobile' : 'desktop';
 // التشغيل المحلي لا يُحسب في إحصاءات الموقع الحقيقي
 const isLocal = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
 
+// إضافة صف إلى جدول في Supabase: المسجّل عبر جلسته، وغيره مباشرة دون تحميل المكتبة
+export function insertRow(table, row) {
+  if (usesClient()) return client().then(c => c.from(table).insert(row)).then(({ error }) => { if (error) throw error; });
+  return fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: 'POST', keepalive: true, body: JSON.stringify(row),
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+  }).then(r => { if (!r.ok) throw { status: r.status }; });
+}
+
 export function track(type, data = {}) {
   if (!authEnabled || isLocal) return;
   const row = { visitor_id: visitorId, type, ...data };
   if (type === 'visit') row.device = device;
-  const sent = usesClient()
-    ? client().then(c => c.from('events').insert(row))
-    : fetch(`${SUPABASE_URL}/rest/v1/events`, {
-        method: 'POST', keepalive: true, body: JSON.stringify(row),
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-      });
-  sent.catch(() => {});
+  insertRow('events', row).catch(() => {});
 }
