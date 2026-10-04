@@ -199,12 +199,13 @@
     </div>
     <div class="modal__meta">حول رسالة: <span data-bind="card-title"></span></div>
     <div class="modal__row">
-      <input class="field" name="name" type="text" placeholder="الاسم" autocomplete="name">
-      <input class="field field--ltr" name="email" type="email" placeholder="البريد الإلكتروني" autocomplete="email">
+      <input class="field" name="name" type="text" placeholder="الاسم" autocomplete="name" maxlength="100">
+      <input class="field field--ltr" name="email" type="email" placeholder="البريد الإلكتروني" autocomplete="email" maxlength="200">
     </div>
-    <textarea class="field" name="text" rows="5" placeholder="اكتب ملاحظتك هنا…"></textarea>
+    <textarea class="field" name="text" rows="5" placeholder="اكتب ملاحظتك هنا…" required maxlength="3000"></textarea>
+    <p class="auth__msg" id="feedback-msg" role="status" hidden></p>
     <div class="modal__actions">
-      <button type="submit" class="btn-gold">إرسال</button>
+      <button type="submit" class="btn-gold" id="feedback-send">إرسال</button>
       <button type="button" class="btn-ghost" data-action="close-feedback">إلغاء</button>
     </div>
   </form>

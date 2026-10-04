@@ -647,6 +647,10 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 .auth__msg.is-ok { background: var(--ok-bg); color: #3f6b2c; }
 .auth--dark .auth__msg { background: rgba(226, 109, 90, .22); color: #f0a497; }
 .auth--dark .auth__msg.is-ok { background: rgba(127, 176, 105, .16); color: #a9d394; }
+.modal .auth__msg { margin: 0; }
+[data-theme="dark"] .modal .auth__msg { background: rgba(226, 109, 90, .22); color: #f0a497; }
+[data-theme="dark"] .modal .auth__msg.is-ok { background: rgba(127, 176, 105, .16); color: #a9d394; }
+.btn-gold:disabled { opacity: .6; cursor: default; }
 
 /* 9) التوجيهات --------------------------------------------------------------- */
 .guide {

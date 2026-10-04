@@ -1,4 +1,4 @@
--- قاعدة بيانات «رسائل حوارية»: المشتركون، سجل الاستخدام، ودوال الإحصاءات للمشرفين.
+-- قاعدة بيانات «رسائل حوارية»: المشتركون، سجل الاستخدام، الملاحظات، ودوال الإحصاءات للمشرفين.
 -- شغّل الملف كاملًا في Supabase ← SQL Editor. إعادة تشغيله آمنة ولا تحذف بيانات.
 -- لجعل حسابٍ مشرفًا (بعد اشتراكه وتأكيد بريده):
 --   update public.profiles set is_admin = true where id = (select id from auth.users where email = 'name@example.com');
@@ -79,7 +79,30 @@ revoke all on public.events from anon, authenticated;
 grant insert on public.events to anon, authenticated;
 
 
--- 3) دوال المشرفين ------------------------------------------------------------
+-- 3) الملاحظات ----------------------------------------------------------------
+-- ما يكتبه الزوار في نموذج «إرسال ملاحظة»، ولا يقرؤه أحد إلا المشرفون عبر admin_feedback()
+create table if not exists public.feedback (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  user_id uuid default auth.uid() references auth.users (id) on delete set null,
+  name text check (char_length(name) <= 100),
+  email text check (char_length(email) <= 200),
+  body text not null check (char_length(trim(body)) between 1 and 3000),
+  rel text check (char_length(rel) <= 20),
+  msg smallint check (msg between 1 and 500),
+  title text check (char_length(title) <= 200)
+);
+create index if not exists feedback_created_at_idx on public.feedback (created_at);
+alter table public.feedback enable row level security;
+
+drop policy if exists "feedback: anyone can send" on public.feedback;
+create policy "feedback: anyone can send" on public.feedback
+  for insert to anon, authenticated with check (user_id is null or user_id = (select auth.uid()));
+revoke all on public.feedback from anon, authenticated;
+grant insert on public.feedback to anon, authenticated;
+
+
+-- 4) دوال المشرفين ------------------------------------------------------------
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = '' as $$
   select coalesce((select is_admin from public.profiles where id = (select auth.uid())), false)
@@ -100,7 +123,7 @@ begin
         'starts',   count(*) filter (where type = 'start'),
         'views',    count(*) filter (where type = 'view'),
         'shares',   count(*) filter (where type in ('share', 'copy', 'download')),
-        'feedback', count(*) filter (where type = 'feedback')) from ev),
+        'feedback', (select count(*) from public.feedback where created_at >= since)) from ev),
       'users', (select jsonb_build_object('total', count(*), 'new', count(*) filter (where created_at >= since)) from public.profiles),
       'daily', (select coalesce(jsonb_agg(d order by d.day), '[]') from (
         select (created_at at time zone 'Asia/Riyadh')::date as day,
@@ -140,6 +163,31 @@ begin
     order by p.created_at desc;
 end $$;
 
+-- الملاحظات أحدثها أولًا، مع بيان إن كان مرسلها مشتركًا
+create or replace function public.admin_feedback()
+returns table (id bigint, created_at timestamptz, name text, email text, body text,
+               rel text, msg smallint, title text, is_user boolean)
+language plpgsql stable security definer set search_path = '' as $$
+#variable_conflict use_column
+begin
+  if not public.is_admin() then raise exception 'forbidden' using errcode = '42501'; end if;
+  return query
+    select f.id, f.created_at, f.name, f.email, f.body, f.rel, f.msg, f.title, f.user_id is not null
+    from public.feedback f
+    order by f.created_at desc
+    limit 2000;
+end $$;
+
+-- حذف ملاحظة (مثل الرسائل المزعجة)
+create or replace function public.admin_delete_feedback(feedback_id bigint) returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  if not public.is_admin() then raise exception 'forbidden' using errcode = '42501'; end if;
+  delete from public.feedback where id = feedback_id;
+end $$;
+
 revoke all on function public.handle_new_user() from public, anon, authenticated;
-revoke all on function public.is_admin(), public.admin_stats(int), public.admin_users() from public, anon;
-grant execute on function public.is_admin(), public.admin_stats(int), public.admin_users() to authenticated;
+revoke all on function public.is_admin(), public.admin_stats(int), public.admin_users(),
+  public.admin_feedback(), public.admin_delete_feedback(bigint) from public, anon;
+grant execute on function public.is_admin(), public.admin_stats(int), public.admin_users(),
+  public.admin_feedback(), public.admin_delete_feedback(bigint) to authenticated;
