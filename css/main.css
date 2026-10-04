@@ -354,8 +354,8 @@ button { cursor: pointer; }
 .card__body[data-size="S"] p { font-size: clamp(18px, 4.5vw, 22px); text-align: center; }
 .card__body[data-size="M"] p { font-size: 19px; }
 .card__body[data-size="L"] p { font-size: 18px; }
-.card__body .q { color: var(--quran); font-family: var(--font-quran); }
-.card__body .ref { color: var(--ref); font-size: 15px; }
+.card__body .q, .share__text .q { color: var(--quran); font-family: var(--font-quran); }
+.card__body .ref, .share__text .ref { color: var(--ref); font-size: 15px; }
 
 .card__foot {
   flex-shrink: 0; border-top: 1px solid rgba(60, 50, 30, .06); padding: 12px 16px;
@@ -562,7 +562,9 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 .share__body { padding: 18px 20px; overflow-y: auto; flex: 1; min-height: 0; }
 .share__title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--ink); text-align: center; margin: 0 0 6px; }
 .share__rule { width: 40px; height: 3px; background: var(--gold); border-radius: 2px; margin: 0 auto 14px; }
-.share__text { margin: 0; font-size: 15px; line-height: 2; color: var(--text); white-space: pre-line; }
+.share__text { margin: 0; font-size: 15px; line-height: 2; color: var(--text); }
+.share__text p { margin: 0; }
+.share__text p + p { margin-top: 10px; }
 .share__foot { padding: 14px 20px 18px; border-top: 1px solid #efe8da; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; }
 .share__soc { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; }
 .share__soc svg { fill: #fff; }
@@ -704,8 +706,8 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 [data-theme="dark"] .card__fade { background: linear-gradient(var(--navy-2), rgba(34, 44, 58, 0)); }
 [data-theme="dark"] .card__title { color: var(--chrome); }
 [data-theme="dark"] .card__body p { color: #e3dccd; }
-[data-theme="dark"] .card__body .q { color: #8fcf9f; }
-[data-theme="dark"] .card__body .ref { color: var(--muted-2); }
+[data-theme="dark"] .card__body .q, [data-theme="dark"] .share__text .q { color: #8fcf9f; }
+[data-theme="dark"] .card__body .ref, [data-theme="dark"] .share__text .ref { color: var(--muted-2); }
 [data-theme="dark"] .card__thumb { background: #3a4453; }
 [data-theme="dark"] .card__track { background: rgba(185, 157, 89, .08); }
 [data-theme="dark"] .card__foot { border-top-color: rgba(185, 157, 89, .18); }
