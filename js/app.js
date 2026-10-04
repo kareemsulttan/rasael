@@ -61,9 +61,18 @@ function renderBindings() {
   bind('intro-theme-btn', n => { n.dataset.tip = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن'; n.setAttribute('aria-label', n.dataset.tip); });
   bind('card-title', n => n.textContent = current().title);
   const authLabel = state.user ? 'حسابي' : 'الدخول / الاشتراك';
+  const userName = state.user?.user_metadata?.full_name?.trim() || '';
   bind('auth-label', n => n.textContent = authLabel);
-  bind('auth-btn', n => { n.dataset.tip = authLabel; n.setAttribute('aria-label', authLabel); });
-  bind('auth-name', n => n.textContent = state.user?.user_metadata?.full_name || '');
+  // بعد الدخول: الاسم في التلميح، وأول حرف منه مكان الأيقونة
+  bind('auth-btn', n => {
+    const tip = state.user ? userName || authLabel : authLabel;
+    n.dataset.tip = tip; n.setAttribute('aria-label', tip);
+    n.userIcon ??= n.innerHTML;
+    if (!state.user) { n.innerHTML = n.userIcon; return; }
+    const initial = [...(userName || state.user.email || '؟')][0].toUpperCase();
+    n.replaceChildren(Object.assign(document.createElement('span'), { className: 'auth-initial', textContent: initial }));
+  });
+  bind('auth-name', n => n.textContent = userName);
   bind('auth-email', n => n.textContent = state.user?.email || '');
   bind('admin-link', n => n.hidden = !state.admin);
   el.body.dataset.theme = state.dark ? 'dark' : 'light';
