@@ -1,4 +1,4 @@
--- قاعدة بيانات «رسائل حوارية»: المشتركون، سجل الاستخدام، الملاحظات، ودوال الإحصاءات للمشرفين.
+-- قاعدة بيانات «رسائل حوارية»: المشتركون، سجل الاستخدام، الملاحظات، متابعة المدعوين، ودوال الإحصاءات للمشرفين.
 -- شغّل الملف كاملًا في Supabase ← SQL Editor. إعادة تشغيله آمنة ولا تحذف بيانات.
 -- لجعل حسابٍ مشرفًا (بعد اشتراكه وتأكيد بريده):
 --   update public.profiles set is_admin = true where id = (select id from auth.users where email = 'name@example.com');
@@ -102,7 +102,55 @@ revoke all on public.feedback from anon, authenticated;
 grant insert on public.feedback to anon, authenticated;
 
 
--- 4) دوال المشرفين ------------------------------------------------------------
+
+-- 4) متابعة المدعوين ---------------------------------------------------------
+-- كل مشترك يحفظ من يدعوهم (اسم أو لقب فقط) وما أرسله لكل واحد منهم من الرسائل.
+-- لا يقرأ هذه البيانات إلا صاحبها، ولا تدخل في دوال المشرفين.
+create table if not exists public.invitees (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  name text not null check (char_length(trim(name)) between 1 and 60),
+  rel text not null check (char_length(rel) <= 20),            -- مفتاح الدين من RELIGIONS في data.js
+  note text check (char_length(note) <= 500),
+  created_at timestamptz not null default now()
+);
+create index if not exists invitees_user_id_idx on public.invitees (user_id);
+alter table public.invitees enable row level security;
+
+drop policy if exists "invitees: own rows" on public.invitees;
+create policy "invitees: own rows" on public.invitees
+  for all to authenticated
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+revoke all on public.invitees from anon, authenticated;
+grant select, insert, update, delete on public.invitees to authenticated;
+
+-- كل إرسال لرسالة إلى مدعو: منه يُحسب تقدّمه («4 من 13») وتاريخ آخر رسالة
+create table if not exists public.invitee_sends (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default now(),
+  invitee_id uuid not null references public.invitees (id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  rel text not null check (char_length(rel) <= 20),
+  msg smallint not null check (msg between 1 and 500),
+  size text check (size in ('S', 'M', 'L')),
+  channel text check (channel in ('wa', 'tw', 'tg', 'fb', 'copy', 'download'))
+);
+create index if not exists invitee_sends_user_id_idx on public.invitee_sends (user_id);
+create index if not exists invitee_sends_invitee_id_idx on public.invitee_sends (invitee_id);
+alter table public.invitee_sends enable row level security;
+
+drop policy if exists "invitee_sends: read own" on public.invitee_sends;
+create policy "invitee_sends: read own" on public.invitee_sends
+  for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists "invitee_sends: add to own invitees" on public.invitee_sends;
+create policy "invitee_sends: add to own invitees" on public.invitee_sends
+  for insert to authenticated with check (
+    user_id = (select auth.uid())
+    and exists (select 1 from public.invitees i where i.id = invitee_id and i.user_id = (select auth.uid())));
+revoke all on public.invitee_sends from anon, authenticated;
+grant select, insert on public.invitee_sends to authenticated;
+
+-- 5) دوال المشرفين ------------------------------------------------------------
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = '' as $$
   select coalesce((select is_admin from public.profiles where id = (select auth.uid())), false)
