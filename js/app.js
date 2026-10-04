@@ -58,6 +58,7 @@ function renderBindings() {
   bind('theme-icon', n => n.textContent = state.dark ? '☀' : '☾');
   bind('intro-theme-icon', n => n.textContent = state.introDark ? '☀' : '☾');
   bind('intro-theme-label', n => n.textContent = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن');
+  bind('intro-theme-btn', n => { n.dataset.tip = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن'; n.setAttribute('aria-label', n.dataset.tip); });
   bind('card-title', n => n.textContent = current().title);
   const authLabel = state.user ? 'حسابي' : 'الدخول / الاشتراك';
   bind('auth-label', n => n.textContent = authLabel);
@@ -128,6 +129,9 @@ function renderGuide() {
       <div><h2 class="guide__h">${g.t}</h2><p class="guide__p">${g.b}</p>${g.b2 ? `<p class="guide__p">${g.b2}</p>` : ''}</div>
     </div>`).join('');
 }
+// يظهر شريط العودة اللاصق أعلى التوجيهات حين يختفي رابط العودة العلوي عند التمرير
+new IntersectionObserver(([e]) => $('#guide').classList.toggle('is-scrolled', !e.isIntersecting), { root: $('#guide') })
+  .observe($('.guide__back'));
 
 function renderAll() { renderLists(); renderCardView(); renderGuide(); }
 
@@ -303,31 +307,102 @@ function setAuthMode(mode, msg = '', ok = false) {
   $('#auth-pass').autocomplete = mode === 'in' ? 'current-password' : 'new-password';
   bind('auth-cta', n => n.textContent = AUTH_CTA[mode] || '');
   bind('auth-title', n => n.textContent = AUTH_TITLE[mode] || '');
+  showPasswords(false);
+  $$('#auth-form [aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
   authMsg(msg, ok);
+}
+// زر العين يُظهر حقلي كلمة المرور معًا ليقارن المستخدم بينهما
+const ICON_EYE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICON_EYE_OFF = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.2A10.4 10.4 0 0 1 12 4c6.4 0 10 8 10 8a17.6 17.6 0 0 1-2.9 4.1"/><path d="M6.6 6.6C3.7 8.4 2 12 2 12s3.6 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M2 2l20 20"/></svg>';
+function showPasswords(show) {
+  $$('#auth-pass, #auth-pass2').forEach(i => i.type = show ? 'text' : 'password');
+  $$('.auth__eye').forEach(b => {
+    b.innerHTML = show ? ICON_EYE_OFF : ICON_EYE;
+    b.setAttribute('aria-pressed', show);
+    b.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+  });
 }
 function authMsg(text, ok = false) {
   const m = $('#auth-msg'); m.textContent = text; m.hidden = !text; m.classList.toggle('is-ok', ok);
 }
 function openAuth(mode = state.user ? 'account' : 'in', msg = '', ok = false) {
   setAuthMode(mode, msg, ok);
-  $('#auth').hidden = false; closeMenu(); closeIntroMenu();
+  $('#auth').hidden = false; closeMenu(); closeIntroMenu(); cpick.close();
   $('#auth-form').classList.toggle('auth--dark', state.intro ? state.introDark : state.dark);
   auth.preload();
 }
+/* ---------- اختيار الدولة: قائمة بالأعلام مع بحث ---------- */
+// القيمة المختارة في #auth-country.value (زر)، فيبقى التحقق والإرسال كما هما
+// توحيد الحروف ليجد «الامارات» «الإمارات» و«السعوديه» «السعودية»
+const normAr = s => s.toLowerCase().normalize('NFKD').replace(/[ً-ٰٟ̀-ͯ]/g, '')
+  .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/^ال|\sال/g, ' ').trim();
+const flagImg = c => `<img class="cpick__flag" src="images/flags/${c.toLowerCase()}.svg" alt="" loading="lazy" width="22" height="16">`;
 function renderCountries() {
-  let names; try { names = new Intl.DisplayNames(['ar'], { type: 'region' }); } catch {}
-  const list = COUNTRIES.CODES.map(c => [c, COUNTRIES.NAMES[c] || names?.of(c) || c]).sort((a, b) => a[1].localeCompare(b[1], 'ar'));
-  $('#auth-country').append(...list.map(([c, n]) => new Option(n, c)));
+  let ar, en; try { ar = new Intl.DisplayNames(['ar'], { type: 'region' }); en = new Intl.DisplayNames(['en'], { type: 'region' }); } catch {}
+  const list = COUNTRIES.CODES.map(c => [c, COUNTRIES.NAMES[c] || ar?.of(c) || c]).sort((a, b) => a[1].localeCompare(b[1], 'ar'));
+  $('#cpick-list').innerHTML = list.map(([c, n]) =>
+    `<li role="option" id="cp-${c}" data-code="${c}" data-name="${n}" data-q="${normAr(`${n} ${en?.of(c) || ''} ${c}`)}" aria-selected="false">${flagImg(c)}<span>${n}</span></li>`).join('');
 }
+const cpick = {
+  root: $('#cpick'), btn: $('#auth-country'), pop: $('#cpick .cpick__pop'), search: $('#cpick .cpick__search'), list: $('#cpick-list'),
+  visible() { return $$('#cpick-list li:not([hidden])'); },
+  open() {
+    this.pop.hidden = false; this.btn.setAttribute('aria-expanded', 'true');
+    this.search.value = ''; this.filter(); this.search.focus();
+    const sel = this.list.querySelector('[aria-selected="true"]');
+    if (sel) { this.activate(sel); sel.scrollIntoView({ block: 'center' }); }
+  },
+  close(refocus) {
+    if (this.pop.hidden) return;
+    this.pop.hidden = true; this.btn.setAttribute('aria-expanded', 'false');
+    if (refocus) this.btn.focus();
+  },
+  filter() {
+    const q = normAr(this.search.value);
+    let first = null;
+    for (const li of this.list.children) { li.hidden = !!q && !li.dataset.q.includes(q); if (!li.hidden) first ??= li; }
+    $('#cpick .cpick__empty').hidden = !!first;
+    this.activate(first);
+  },
+  activate(li) {
+    this.list.querySelector('.is-active')?.classList.remove('is-active');
+    if (li) { li.classList.add('is-active'); li.scrollIntoView({ block: 'nearest' }); }
+    li ? this.search.setAttribute('aria-activedescendant', li.id) : this.search.removeAttribute('aria-activedescendant');
+  },
+  choose(li) {
+    this.list.querySelector('[aria-selected="true"]')?.setAttribute('aria-selected', 'false');
+    li.setAttribute('aria-selected', 'true');
+    this.btn.value = li.dataset.code; this.btn.removeAttribute('aria-invalid');
+    this.btn.querySelector('.cpick__val').innerHTML = `${flagImg(li.dataset.code)}<span>${li.dataset.name}</span>`;
+    this.close(true);
+  },
+};
+cpick.btn.addEventListener('click', () => cpick.pop.hidden ? cpick.open() : cpick.close());
+cpick.search.addEventListener('input', () => cpick.filter());
+cpick.list.addEventListener('click', e => { const li = e.target.closest('li'); if (li) cpick.choose(li); });
+cpick.root.addEventListener('keydown', e => {
+  if (cpick.pop.hidden) return;
+  const items = cpick.visible(), i = items.indexOf(cpick.list.querySelector('.is-active'));
+  if (e.key === 'ArrowDown') cpick.activate(items[Math.min(i + 1, items.length - 1)]);
+  else if (e.key === 'ArrowUp') cpick.activate(items[Math.max(i - 1, 0)]);
+  else if (e.key === 'Enter') { if (items[i]) cpick.choose(items[i]); }
+  else if (e.key === 'Escape') cpick.close(true);
+  else if (e.key === 'Tab') { cpick.close(); return; }
+  else return;
+  e.preventDefault(); e.stopPropagation();
+});
+document.addEventListener('pointerdown', e => { if (!cpick.root.contains(e.target)) cpick.close(); });
+// يُعلَّم الحقل المخطئ بإطار أحمر، ويزول التعليم حين يُعدَّل
+$('#auth-form').addEventListener('input', e => e.target.removeAttribute('aria-invalid'));
 function authInvalid() {
   const email = $('#auth-email'), pass = $('#auth-pass').value, isNew = authMode === 'up' || authMode === 'reset';
-  if (authMode === 'up' && !$('#auth-name').value.trim()) return 'اكتب اسمك.';
-  if (authMode === 'up' && !$('#auth-country').value) return 'اختر دولتك.';
-  if (authMode !== 'reset' && (!email.value.trim() || !email.validity.valid)) return 'اكتب بريدًا إلكترونيًا صحيحًا.';
-  if (authMode === 'in' && !pass) return 'اكتب كلمة المرور.';
-  if (isNew && pass.length < 8) return 'كلمة المرور 8 أحرف على الأقل.';
-  if (isNew && pass !== $('#auth-pass2').value) return 'كلمتا المرور غير متطابقتين.';
-  return '';
+  if (authMode === 'up' && !$('#auth-name').value.trim()) return ['اكتب اسمك.', 'auth-name'];
+  if (authMode === 'up' && !$('#auth-country').value) return ['اختر دولتك.', 'auth-country'];
+  if (authMode !== 'reset' && (!email.value.trim() || !email.validity.valid)) return ['اكتب بريدًا إلكترونيًا صحيحًا.', 'auth-email'];
+  if (authMode === 'in' && !pass) return ['اكتب كلمة المرور.', 'auth-pass'];
+  if (isNew && pass.length < 8) return ['كلمة المرور 8 أحرف على الأقل.', 'auth-pass'];
+  if (isNew && pass !== $('#auth-pass2').value) return ['كلمتا المرور غير متطابقتين.', 'auth-pass2'];
+  return null;
 }
 const AUTH_SUBMIT = {
   in: async f => { await auth.signIn(f.email, f.pass); $('#auth').hidden = true; },
@@ -341,11 +416,13 @@ const AUTH_SUBMIT = {
 };
 $('#auth-form').addEventListener('submit', async e => {
   e.preventDefault();
-  const bad = authInvalid(); if (bad) return authMsg(bad);
+  $$('#auth-form [aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
+  const bad = authInvalid();
+  if (bad) { const field = $('#' + bad[1]); field.setAttribute('aria-invalid', 'true'); field.focus(); return authMsg(bad[0]); }
   const btn = $('#auth-form [type="submit"]');
   const f = { name: $('#auth-name').value.trim(), country: $('#auth-country').value, email: $('#auth-email').value.trim(), pass: $('#auth-pass').value };
   btn.disabled = true; authMsg('');
-  try { await AUTH_SUBMIT[authMode](f); $('#auth-pass').value = $('#auth-pass2').value = ''; }
+  try { await AUTH_SUBMIT[authMode](f); $('#auth-pass').value = $('#auth-pass2').value = ''; showPasswords(false); }
   catch (err) { authMsg(auth.errorText(err)); }
   finally { btn.disabled = false; }
 });
@@ -383,6 +460,7 @@ const actions = {
   auth: () => openAuth(), 'close-auth': () => $('#auth').hidden = true,
   'auth-swap': () => setAuthMode(authMode === 'in' ? 'up' : 'in'),
   'auth-forgot': () => setAuthMode('forgot'), 'auth-in': () => setAuthMode('in'),
+  'toggle-pass': () => showPasswords($('#auth-pass').type === 'password'),
   'sign-out': signOut,
   'hide-hint': hideHint,
 };

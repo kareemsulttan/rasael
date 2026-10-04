@@ -41,8 +41,8 @@
         </button>
         <div class="pop pop--down pop--grid" id="pop-intro-lang" data-list="lang" role="listbox" hidden></div>
       </div>
-      <button class="pill pill--gold" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
-      <button class="mode-btn" data-action="intro-theme" aria-label="تبديل الوضع"><span data-bind="intro-theme-icon">☀</span></button>
+      <button class="mode-btn tip tip--down" data-tip="الدخول / الاشتراك" data-action="auth" data-bind="auth-btn" aria-label="الدخول / الاشتراك"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+      <button class="mode-btn tip tip--down" data-tip="الوضع الفاتح" data-action="intro-theme" data-bind="intro-theme-btn" aria-label="الوضع الفاتح"><span data-bind="intro-theme-icon">☀</span></button>
     </div>
   </div>
 
@@ -222,6 +222,7 @@
 
 <!-- التوجيهات -->
 <section class="guide" id="guide" aria-label="توجيهات عامة للداعية" hidden>
+  <div class="guide__bar"><a href="#" data-action="close-guide">→ العودة إلى الرسائل</a></div>
   <div class="guide__hero">
     <div class="guide__ring guide__ring--1"></div>
     <div class="guide__ring guide__ring--2"></div>
@@ -270,22 +271,37 @@
     </div>
     <div data-auth-only="up" hidden>
       <label for="auth-name">الاسم</label>
-      <input id="auth-name" type="text" placeholder="اسمك الكامل" autocomplete="name">
+      <input id="auth-name" aria-required="true" type="text" placeholder="الاسم" autocomplete="name">
       <label for="auth-country">الدولة</label>
-      <select id="auth-country" autocomplete="country"><option value="">اختر دولتك</option></select>
+      <div class="cpick" id="cpick">
+        <button type="button" id="auth-country" class="cpick__btn" value="" aria-required="true" aria-haspopup="listbox" aria-expanded="false">
+          <span class="cpick__val">اختر دولتك</span><span class="chev"></span>
+        </button>
+        <div class="cpick__pop" hidden>
+          <input type="search" class="cpick__search" placeholder="ابحث عن دولتك" aria-label="ابحث عن دولة" role="combobox" aria-controls="cpick-list" aria-expanded="true" autocomplete="off">
+          <ul class="cpick__list" id="cpick-list" role="listbox" aria-label="الدول"></ul>
+          <p class="cpick__empty" hidden>لا توجد نتائج</p>
+        </div>
+      </div>
     </div>
     <div data-auth-only="in up forgot">
       <label for="auth-email">البريد الإلكتروني</label>
-      <input id="auth-email" type="email" placeholder="name@example.com" dir="ltr" autocomplete="email">
+      <input id="auth-email" aria-required="true" type="email" placeholder="name@example.com" dir="ltr" autocomplete="email">
     </div>
     <div data-auth-only="in up reset">
       <label for="auth-pass">كلمة المرور</label>
-      <input id="auth-pass" type="password" placeholder="••••••••" dir="ltr" autocomplete="current-password">
+      <div class="auth__pass">
+        <input id="auth-pass" aria-required="true" type="password" placeholder="••••••••" dir="ltr" autocomplete="current-password">
+        <button type="button" class="auth__eye" data-action="toggle-pass" aria-label="إظهار كلمة المرور" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
     </div>
     <a href="#" class="auth__forgot" data-auth-only="in" data-action="auth-forgot">نسيت كلمة المرور؟</a>
     <div data-auth-only="up reset" hidden>
       <label for="auth-pass2">إعادة كلمة المرور</label>
-      <input id="auth-pass2" type="password" placeholder="••••••••" dir="ltr" autocomplete="new-password">
+      <div class="auth__pass">
+        <input id="auth-pass2" aria-required="true" type="password" placeholder="••••••••" dir="ltr" autocomplete="new-password">
+        <button type="button" class="auth__eye" data-action="toggle-pass" aria-label="إظهار كلمة المرور" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
     </div>
     <div class="auth__account" data-auth-only="account" hidden>
       <strong data-bind="auth-name"></strong>
