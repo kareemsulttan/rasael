@@ -93,6 +93,8 @@ button { cursor: pointer; }
   transition: border-color .2s, background .2s, transform .18s;
 }
 .icon-btn svg { stroke: var(--gold-ink); }
+.auth-initial { font-size: 15px; font-weight: 700; line-height: 1; }
+.icon-btn .auth-initial { color: var(--gold-ink); }
 .icon-btn:hover { border-color: var(--gold); }
 .icon-btn.is-ok { background: var(--ok-bg); border-color: var(--ok); }
 
