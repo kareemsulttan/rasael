@@ -94,7 +94,6 @@ function renderBindings() {
   bind('admin-link', n => n.hidden = !state.admin);
   const faved = favIndex() >= 0, favTip = faved ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة';
   bind('fav-btn', n => { n.classList.toggle('is-fav', faved); n.setAttribute('aria-pressed', faved); n.dataset.tip = favTip; n.setAttribute('aria-label', favTip); });
-  bind('fav-count', n => { n.textContent = favs.length; n.hidden = !favs.length; });
   bind('fav-sub', n => n.textContent = favs.length ? `· ${favs.length}` : '');
   el.body.dataset.theme = state.dark ? 'dark' : 'light';
   el.intro.dataset.theme = state.introDark ? 'dark' : 'light';

@@ -97,15 +97,9 @@ button { cursor: pointer; }
 .icon-btn .auth-initial { color: var(--gold-ink); }
 .icon-btn:hover { border-color: var(--gold); }
 .icon-btn.is-ok { background: var(--ok-bg); border-color: var(--ok); }
-/* المفضلة: قلب ممتلئ حين تكون الرسالة محفوظة، وعدّاد صغير على زر القائمة */
+/* المفضلة: قلب ممتلئ حين تكون الرسالة محفوظة */
 .icon-btn.is-fav, [data-theme="dark"] .card .icon-btn.is-fav { background: var(--gold); border-color: var(--gold); }
 .icon-btn.is-fav svg, [data-theme="dark"] .card .icon-btn.is-fav svg { stroke: #fff; fill: #fff; }
-.fav-open { position: relative; }
-.fav-badge {
-  position: absolute; top: -5px; left: -5px; min-width: 17px; height: 17px; padding: 0 4px;
-  border-radius: 999px; background: var(--gold); color: var(--navy);
-  font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; pointer-events: none;
-}
 
 .chev {
   display: inline-block; width: 6px; height: 6px; flex: none;
