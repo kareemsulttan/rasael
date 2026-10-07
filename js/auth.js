@@ -54,6 +54,12 @@ const call = fn => db(c => fn(c.auth));
 export const getUser = async () => (await call(a => a.getSession())).session?.user ?? null;
 export const myProfile = () => db(c => c.from('profiles').select('full_name, country, is_admin').maybeSingle());
 export const rpc = (name, args) => db(c => c.rpc(name, args));
+// مفضلة المشترك (الصلاحية في قاعدة البيانات: كلٌّ يرى مفضلته فقط)
+export const favorites = {
+  list: () => db(c => c.from('favorites').select('rel, title, msg, size, created_at').order('created_at', { ascending: false })),
+  add: rows => db(c => c.from('favorites').upsert(rows, { onConflict: 'user_id,rel,title', ignoreDuplicates: true })),
+  remove: ({ rel, title }) => db(c => c.from('favorites').delete().match({ rel, title })),
+};
 export const signIn = (email, password) => call(a => a.signInWithPassword({ email, password }));
 export async function signUp({ name, country, email, pass }) {
   const data = await call(a => a.signUp({ email, password: pass, options: { data: { full_name: name, country }, emailRedirectTo: SITE_URL } }));

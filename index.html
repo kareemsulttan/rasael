@@ -206,7 +206,8 @@
       <button type="button" class="modal__close" data-action="close-favs" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
     </div>
     <div class="favs__list" id="favs-list"></div>
-    <div class="modal__meta">تُحفظ المفضلة في هذا المتصفح فقط.</div>
+    <p class="auth__msg" id="favs-msg" role="status" hidden></p>
+    <div class="modal__meta">تُحفظ المفضلة في حسابك، فتجدها على أي جهاز تدخل منه.</div>
   </div>
 </div>
 
@@ -290,6 +291,7 @@
       <h3 class="auth__title" data-bind="auth-title" data-auth-only="forgot reset account" hidden></h3>
       <button type="button" class="auth__close" data-action="close-auth" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
+    <p class="auth__lead" data-bind="auth-lead" hidden></p>
     <div data-auth-only="up" hidden>
       <label for="auth-name">الاسم</label>
       <input id="auth-name" aria-required="true" type="text" placeholder="الاسم" autocomplete="name">

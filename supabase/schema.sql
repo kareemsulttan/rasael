@@ -1,4 +1,4 @@
--- قاعدة بيانات «رسائل حوارية»: المشتركون، سجل الاستخدام، الملاحظات، ودوال الإحصاءات للمشرفين.
+-- قاعدة بيانات «رسائل حوارية»: المشتركون، سجل الاستخدام، الملاحظات، المفضلة، ودوال الإحصاءات للمشرفين.
 -- شغّل الملف كاملًا في Supabase ← SQL Editor. إعادة تشغيله آمنة ولا تحذف بيانات.
 -- لجعل حسابٍ مشرفًا (بعد اشتراكه وتأكيد بريده):
 --   update public.profiles set is_admin = true where id = (select id from auth.users where email = 'name@example.com');
@@ -102,7 +102,28 @@ revoke all on public.feedback from anon, authenticated;
 grant insert on public.feedback to anon, authenticated;
 
 
--- 4) دوال المشرفين ------------------------------------------------------------
+-- 4) المفضلة ------------------------------------------------------------------
+-- رسائل يحفظها المشترك ليجدها على أي جهاز. تُعرَّف الرسالة بدينها وعنوانها، ورقمها وقت الحفظ احتياط.
+create table if not exists public.favorites (
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  rel text not null check (char_length(rel) between 1 and 20),
+  title text not null check (char_length(title) between 1 and 200),
+  msg smallint check (msg between 1 and 500),
+  size text check (size in ('S', 'M', 'L')),
+  created_at timestamptz not null default now(),
+  primary key (user_id, rel, title)
+);
+alter table public.favorites enable row level security;
+
+-- كل مشترك يقرأ مفضلته ويضيف إليها ويحذف منها، ولا يرى مفضلة غيره
+drop policy if exists "favorites: own" on public.favorites;
+create policy "favorites: own" on public.favorites
+  for all to authenticated using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
+revoke all on public.favorites from anon, authenticated;
+grant select, insert, delete on public.favorites to authenticated;
+
+
+-- 5) دوال المشرفين ------------------------------------------------------------
 create or replace function public.is_admin() returns boolean
 language sql stable security definer set search_path = '' as $$
   select coalesce((select is_admin from public.profiles where id = (select auth.uid())), false)

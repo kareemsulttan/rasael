@@ -669,6 +669,9 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 .auth--dark .auth__foot { color: var(--muted-5); }
 .auth__foot a, .auth__forgot { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
 .auth__title { margin: 0; font-family: var(--font-display); font-size: 20px; }
+/* سطر تمهيدي حين تُفتح النافذة من ميزة للمشتركين (المفضلة) */
+.auth__lead { margin: -8px 0 18px; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.8; background: var(--gold-faint); color: var(--gold-ink); }
+.auth--dark .auth__lead { background: rgba(185, 157, 89, .14); color: #d9c189; }
 .auth__forgot { display: block; width: fit-content; margin: -6px 0 14px; margin-inline-start: auto; font-size: 13px; }
 .auth__account { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid var(--gold-soft); border-radius: 12px; }
 .auth__account strong { font-size: 16px; }
