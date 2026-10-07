@@ -316,7 +316,7 @@ async function shareNative(e) {
 /* ---------- المفضلة ---------- */
 // القلب يعمل للجميع: الزائر تُحفظ مفضلته في متصفحه، والمشترك في حسابه (جدول favorites).
 // قائمة المفضلة للمشتركين: الزائر تُفتح له نافذة الاشتراك، وعند دخوله تُنقل مفضلة متصفحه إلى حسابه.
-const FAV_LEAD = 'اشترك لتحفظ الرسائل المفضلة، وتجدها في حسابك على أي جهاز.';
+const FAV_LEAD = 'اشترك لتحفظ الرسائل المفضلة في حسابك';
 const FAV_KEY = 'om-favs';
 let favsFor = null, favsState = 'ready';
 const favOf = () => ({ rel: RELIGIONS[state.rel].key, title: current().title, msg: state.cur + 1, size: state.len });
