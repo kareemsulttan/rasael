@@ -30,7 +30,7 @@ const state = {
 const msgs = () => MESSAGES[RELIGIONS[state.rel].set];
 const current = () => msgs()[state.cur];
 
-// مفضلة المشترك من حسابه: [{ rel, title, msg, size, at }] الأحدث أولًا.
+// المفضلة: [{ rel, title, msg, size, at }] الأحدث أولًا، من حساب المشترك أو من متصفح الزائر.
 // تُعرَّف الرسالة بدينها وعنوانها (لا برقمها) حتى تبقى صحيحة إن تغيّر ترتيب الرسائل.
 let favs = [];
 const favIndex = () => favs.findIndex(f => f.rel === RELIGIONS[state.rel].key && f.title === current().title);
@@ -313,11 +313,12 @@ async function shareNative(e) {
   else window.open(href, '_blank', 'noopener');
 }
 
-/* ---------- المفضلة (للمشتركين) ---------- */
-// الزائر يرى القلب، وحين يضغطه تُفتح نافذة الاشتراك. المشترك تُحفظ مفضلته في حسابه (جدول favorites).
+/* ---------- المفضلة ---------- */
+// القلب يعمل للجميع: الزائر تُحفظ مفضلته في متصفحه، والمشترك في حسابه (جدول favorites).
+// قائمة المفضلة للمشتركين: الزائر تُفتح له نافذة الاشتراك، وعند دخوله تُنقل مفضلة متصفحه إلى حسابه.
 const FAV_LEAD = 'اشترك لتحفظ الرسائل المفضلة، وتجدها في حسابك على أي جهاز.';
-const OLD_FAV_KEY = 'om-favs';   // مفضلة كانت تُحفظ في المتصفح قبل ربطها بالحساب، تُنقل إليه عند الدخول
-let favsFor = null, favsState = 'ready', pendingFav = null;   // pendingFav: رسالة ضغط الزائر قلبها ثم دخل
+const FAV_KEY = 'om-favs';
+let favsFor = null, favsState = 'ready';
 const favOf = () => ({ rel: RELIGIONS[state.rel].key, title: current().title, msg: state.cur + 1, size: state.len });
 const favRow = f => ({
   rel: String(f.rel).slice(0, 20), title: String(f.title).slice(0, 200),
@@ -325,23 +326,23 @@ const favRow = f => ({
   size: SIZE_KEYS.includes(f.size) ? f.size : null,
   created_at: new Date(Number.isFinite(f.at) ? f.at : Date.now()).toISOString(),
 });
-function oldFavs() {
-  try { const v = JSON.parse(store.get(OLD_FAV_KEY) || '[]'); return Array.isArray(v) ? v.filter(f => f?.rel && f?.title) : []; }
+function localFavs() {
+  try { const v = JSON.parse(store.get(FAV_KEY) || '[]'); return Array.isArray(v) ? v.filter(f => f?.rel && f?.title) : []; }
   catch { return []; }
 }
+favs = localFavs();
 function favsChanged() { renderBindings(); if (!$('#favs').hidden) renderFavs(); }
-// تُحمَّل عند الدخول أو تغيّر الحساب، وتُفرَّغ عند الخروج
+// عند الدخول: تُنقل مفضلة المتصفح إلى الحساب ثم تُحمَّل منه. عند الخروج: يعود ما في المتصفح.
 async function syncFavs(force = false) {
   const id = state.user?.id ?? null;
   if (id === favsFor && !force) return;
-  favsFor = id; favs = [];
-  if (!id) { favsState = 'ready'; $('#favs').hidden = true; return favsChanged(); }
-  favsState = 'loading'; favsChanged();
-  const seen = new Set(), add = [pendingFav, ...oldFavs()].filter(f => {
-    const k = f && f.rel + '|' + f.title; if (!f || seen.has(k)) return false; seen.add(k); return true;
+  favsFor = id;
+  if (!id) { favsState = 'ready'; favs = localFavs(); $('#favs').hidden = true; return favsChanged(); }
+  favs = []; favsState = 'loading'; favsChanged();
+  const seen = new Set(), add = localFavs().filter(f => {
+    const k = f.rel + '|' + f.title; if (seen.has(k)) return false; seen.add(k); return true;
   }).map(favRow);
-  pendingFav = null;
-  if (add.length) await auth.favorites.add(add).then(() => store.del(OLD_FAV_KEY)).catch(() => {});
+  if (add.length) await auth.favorites.add(add).then(() => store.del(FAV_KEY)).catch(() => {});
   try {
     const list = await auth.favorites.list();
     if (favsFor !== id) return;   // تغيّر الحساب أثناء التحميل
@@ -351,11 +352,10 @@ async function syncFavs(force = false) {
   favsChanged();
 }
 async function toggleFav(btn) {
-  const f = favOf();
-  if (!state.user) { openAuth('up', '', false, FAV_LEAD); pendingFav = { ...f, at: Date.now() }; return; }
-  const i = favIndex(), before = favs.slice();
+  const f = favOf(), i = favIndex(), before = favs.slice();
   if (i >= 0) favs.splice(i, 1); else favs.unshift({ ...f, at: Date.now() });
   favsChanged();
+  if (!state.user) return store.set(FAV_KEY, JSON.stringify(favs));
   try { await (i >= 0 ? auth.favorites.remove(f) : auth.favorites.add([favRow(favs[0])])); }
   catch { favs = before; favsChanged(); btn.dataset.tip = 'تعذّر الحفظ، حاول مرة أخرى'; }
 }
@@ -397,7 +397,7 @@ function renderFavs() {
   }));
 }
 function openFavs() {
-  if (!state.user) { pendingFav = null; return openAuth('up', '', false, FAV_LEAD); }
+  if (!state.user) return openAuth('up', '', false, FAV_LEAD);
   favsMsg('');
   if (favsState === 'error') syncFavs(true);   // إعادة المحاولة إن تعذّر التحميل من قبل
   renderFavs();
@@ -624,7 +624,7 @@ const actions = {
   'msg-qr': () => { $('#msg-qr-img').src = el.cqr.src; $('#msg-qr').hidden = false; },
   'close-msg-qr': () => $('#msg-qr').hidden = true,
   'site-qr': () => { $('#site-qr').hidden = false; closeIntroMenu(); }, 'close-site-qr': () => $('#site-qr').hidden = true,
-  auth: () => { pendingFav = null; openAuth(); }, 'close-auth': () => $('#auth').hidden = true,
+  auth: () => openAuth(), 'close-auth': () => $('#auth').hidden = true,
   'auth-swap': () => setAuthMode(authMode === 'in' ? 'up' : 'in'),
   'auth-forgot': () => setAuthMode('forgot'), 'auth-in': () => setAuthMode('in'),
   'toggle-pass': () => showPasswords($('#auth-pass').type === 'password'),
