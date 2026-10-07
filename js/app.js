@@ -4,7 +4,6 @@ import { qrDataUrl } from './qr.js';
 import { renderCard, segmentsFromHtml } from './card.js';
 import * as auth from './auth.js';
 import { track, insertRow } from './track.js';
-import * as invitees from './invitees.js';
 
 /* ---------- أدوات صغيرة ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -84,7 +83,6 @@ function renderBindings() {
   bind('auth-name', n => n.textContent = userName);
   bind('auth-email', n => n.textContent = state.user?.email || '');
   bind('admin-link', n => n.hidden = !state.admin);
-  bind('signed-only', n => n.hidden = !state.user);
   el.body.dataset.theme = state.dark ? 'dark' : 'light';
   el.intro.dataset.theme = state.introDark ? 'dark' : 'light';
 }
@@ -284,9 +282,8 @@ async function downloadCard() {
   const { dataUrl } = await generateCard();
   const a = document.createElement('a'); a.href = dataUrl; a.download = (current().title || 'رسالة') + '.png'; a.click();
 }
-function openShare(preselect = null) {
+function openShare() {
   const { title, text } = cardText();
-  invitees.prepareShare(preselect);
   // المعاينة بتنسيق البطاقة نفسه (الآيات بخط Amiri وعلامة الآية حول رقمها)؛ المُرسَل يبقى نصًا
   $('#share-text').innerHTML = current()[sizeField(state.len)];
   const payload = encodeURIComponent(title + '\n\n' + text), page = encodeURIComponent(msgUrl());
@@ -305,18 +302,6 @@ async function shareNative(e) {
   const { file } = await (cardPromise || generateCard());
   if (file && navigator.canShare({ files: [file] })) navigator.share({ files: [file] }).catch(() => {});
   else window.open(href, '_blank', 'noopener');
-}
-
-// من «مدعوّيّ»: يفتح الرسالة التالية للمدعو (ولو من الصفحة الأولى) ثم نافذة المشاركة واسمه مختار
-function openMessageFor(relKey, msg, inviteeId) {
-  state.rel = Math.max(0, RELIGIONS.findIndex(r => r.key === relKey));
-  state.cur = Math.max(0, Math.min(msgs().length - 1, msg - 1));
-  state.len = state.defLen; state.step = 3;
-  closeMenu(); closeIntroMenu(); $('#auth').hidden = true;
-  if (state.intro) { state.intro = false; el.intro.hidden = true; }
-  history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
-  renderLists(); renderCardView();
-  openShare(inviteeId);
 }
 
 /* ---------- الملاحظات ---------- */
@@ -503,7 +488,6 @@ auth.onUser(user => {
     auth.myProfile().then(p => { state.admin = !!p?.is_admin; renderBindings(); }).catch(() => {});
   }
   renderBindings();
-  invitees.load(user);
   if (!user && authMode === 'account') $('#auth').hidden = true;
 });
 
@@ -515,11 +499,9 @@ const actions = {
   theme: toggleTheme, 'intro-theme': toggleIntroTheme,
   menu: openMenu, 'close-menu': closeMenu, 'intro-menu': openIntroMenu, 'close-intro-menu': closeIntroMenu,
   'toggle-pop': (btn) => togglePop(btn), 'toggle-sub': (btn) => toggleSub(btn),
-  share: () => openShare(), 'close-share': () => $('#share').hidden = true,
-  copy: (btn) => copyText(btn), 'share-copy': (btn) => { copyText(btn); invitees.recordSend('copy'); },
-  download: downloadCard, 'share-download': () => { downloadCard(); invitees.recordSend('download'); },
-  invitees: () => { closeMenu(); closeIntroMenu(); $('#auth').hidden = true; invitees.openList(); },
-  'close-invitees': () => $('#invitees').hidden = true, 'close-inv-form': invitees.closeForm,
+  share: openShare, 'close-share': () => $('#share').hidden = true,
+  copy: (btn) => copyText(btn), 'share-copy': (btn) => copyText(btn),
+  download: downloadCard, 'share-download': downloadCard,
   feedback: openFeedback, 'close-feedback': () => $('#feedback').hidden = true,
   'msg-qr': () => { $('#msg-qr-img').src = el.cqr.src; $('#msg-qr').hidden = false; },
   'close-msg-qr': () => $('#msg-qr').hidden = true,
@@ -542,7 +524,7 @@ document.addEventListener('click', e => {
   const pickSize = t.closest('[data-pick-size]'); if (pickSize) { setLen(pickSize.dataset.pickSize, pickSize.dataset.scope); return; }
   const go = t.closest('[data-go]'); if (go) { goTo(+go.dataset.go); return; }
   const tab = t.closest('[data-auth-tab]'); if (tab) { setAuthMode(tab.dataset.authTab); return; }
-  const soc = t.closest('[data-share]'); if (soc) { track('share', { ...msgRef(), channel: soc.dataset.share }); invitees.recordSend(soc.dataset.share); shareNative(e); return; }
+  const soc = t.closest('[data-share]'); if (soc) { track('share', { ...msgRef(), channel: soc.dataset.share }); shareNative(e); return; }
 
   const act = t.closest('[data-action]');
   if (act) {
@@ -608,11 +590,6 @@ if ('ResizeObserver' in window) { new ResizeObserver(measureChrome).observe($('.
 window.addEventListener('resize', measureChrome);
 
 /* ---------- التشغيل ---------- */
-invitees.init({
-  ctx: () => ({ user: state.user, relKey: RELIGIONS[state.rel].key, msg: state.cur + 1, size: state.len }),
-  openMessage: openMessageFor,
-  openAuth: mode => openAuth(mode),
-});
 readHash();
 renderAll();
 setAuthMode('in');

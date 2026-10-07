@@ -80,7 +80,6 @@
     </div>
     <a href="#guide" class="drawer__item" data-action="guide">توجيهات عامة للداعية</a>
     <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
-    <button class="drawer__item" data-action="invitees" data-bind="signed-only" hidden>مدعوّيّ</button>
     <button class="drawer__item" data-action="intro-theme"><span data-bind="intro-theme-label"></span><span class="glyph" data-bind="intro-theme-icon"></span></button>
     <button class="drawer__item" data-action="toggle-sub" data-sub="intro-lang-sub"><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
     <div class="drawer__sub drawer__sub--chips" id="intro-lang-sub" data-list="lang-chips" hidden></div>
@@ -187,49 +186,12 @@
   <a href="#" class="drawer__item" data-action="home">الرئيسية</a>
   <a href="#guide" class="drawer__item" data-action="guide">توجيهات عامة للداعية</a>
   <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
-  <button class="drawer__item" data-action="invitees" data-bind="signed-only" hidden>مدعوّيّ</button>
   <button class="drawer__item" data-action="theme"><span data-bind="theme-label"></span><span class="glyph" data-bind="theme-icon"></span></button>
   <button class="drawer__item" data-action="toggle-sub" data-sub="menu-rel-sub"><span>دين المدعو <span class="sub">· <span data-bind="rel-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub" id="menu-rel-sub" data-list="rel" hidden></div>
   <button class="drawer__item" data-action="toggle-sub" data-sub="menu-lang-sub"><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub drawer__sub--chips" id="menu-lang-sub" data-list="lang-chips" hidden></div>
 </aside>
-
-<!-- مدعوّيّ: قائمة من يدعوهم المشترك وتقدّم كل واحد (invitees.js) -->
-<div class="overlay" id="invitees" data-action="close-invitees" hidden>
-  <div class="modal inv" data-stop>
-    <div class="modal__head">
-      <h3 class="modal__title">مدعوّيّ <span class="inv__count" id="inv-count"></span></h3>
-      <button type="button" class="modal__close" data-action="close-invitees" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
-    </div>
-    <div class="inv__tabs" id="inv-tabs" role="tablist"></div>
-    <div class="inv__list" id="inv-list"></div>
-    <button type="button" class="btn-ghost inv__add" data-inv-add>+ إضافة شخص</button>
-  </div>
-</div>
-
-<div class="overlay overlay--top" id="inv-form-wrap" data-action="close-inv-form" hidden>
-  <form class="modal" id="inv-form" data-stop novalidate>
-    <div class="modal__head">
-      <h3 class="modal__title" id="inv-form-title">شخص جديد</h3>
-      <button type="button" class="modal__close" data-action="close-inv-form" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
-    </div>
-    <label class="inv__label" for="inv-name">الاسم أو اللقب</label>
-    <input class="field" id="inv-name" name="name" type="text" maxlength="60" placeholder="مثلًا: أحمد، أو زميل العمل" autocomplete="off">
-    <div class="inv__label">دين المدعو</div>
-    <div class="who__chips" id="inv-form-rel"></div>
-    <button type="button" class="inv__more" id="inv-note-toggle">+ ملاحظة خاصة <span>(اختياري)</span></button>
-    <div id="inv-note-wrap" hidden>
-      <textarea class="field" name="note" rows="3" maxlength="500" placeholder="لا يراها أحد غيرك"></textarea>
-    </div>
-    <p class="auth__msg" id="inv-form-msg" role="status" hidden></p>
-    <div class="modal__actions">
-      <button type="submit" class="btn-gold" id="inv-save">حفظ</button>
-      <button type="button" class="btn-ghost" data-action="close-inv-form">إلغاء</button>
-      <button type="button" class="inv__delete" id="inv-delete" hidden>حذف</button>
-    </div>
-  </form>
-</div>
 
 <!-- إرسال ملاحظة -->
 <div class="overlay" id="feedback" data-action="close-feedback" hidden>
@@ -288,7 +250,6 @@
       <div class="share__rule"></div>
       <div class="share__text" id="share-text"></div>
     </div>
-    <div class="share__who" id="share-who" hidden></div>
     <div class="share__foot">
       <a class="share__soc share__soc--wa" data-share="wa" target="_blank" rel="noopener" title="واتساب" href="#"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4 0-.5.2-.7l.5-.6c.1-.2.1-.3 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.9.9-1 2.2-.1 3.7a11.6 11.6 0 0 0 4.5 4.2c1.7.8 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2 0 0-.2-.1-.6-.2z"/></svg></a>
       <a class="share__soc share__soc--x" data-share="tw" target="_blank" rel="noopener" title="إكس" href="#"><svg width="17" height="17" viewBox="0 0 24 24"><path d="M18.9 2H22l-6.8 7.8L23.3 22h-6.3l-4.9-6.4L6.4 22H3.3l7.3-8.3L1 2h6.5l4.4 5.9L18.9 2zm-1.1 18h1.7L7.4 3.8H5.5L17.8 20z"/></svg></a>
@@ -352,7 +313,6 @@
     </div>
     <p class="auth__msg" id="auth-msg" role="status" hidden></p>
     <button type="submit" class="auth__submit" data-bind="auth-cta" data-auth-only="in up forgot reset">دخول</button>
-    <button type="button" class="auth__submit auth__submit--ghost auth__invitees" data-action="invitees" data-auth-only="account" hidden>مدعوّيّ</button>
     <div data-auth-only="account" hidden><a class="auth__submit auth__admin" href="admin.html" data-bind="admin-link" hidden>الإحصاءات والمشتركون</a></div>
     <button type="button" class="auth__submit auth__submit--ghost" data-action="sign-out" data-auth-only="account" hidden>تسجيل الخروج</button>
     <div class="auth__foot" data-auth-only="in">مستخدم جديد؟ <a href="#" data-action="auth-swap">اشترك</a></div>
