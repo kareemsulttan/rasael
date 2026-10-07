@@ -97,6 +97,15 @@ button { cursor: pointer; }
 .icon-btn .auth-initial { color: var(--gold-ink); }
 .icon-btn:hover { border-color: var(--gold); }
 .icon-btn.is-ok { background: var(--ok-bg); border-color: var(--ok); }
+/* المفضلة: قلب ممتلئ حين تكون الرسالة محفوظة، وعدّاد صغير على زر القائمة */
+.icon-btn.is-fav, [data-theme="dark"] .card .icon-btn.is-fav { background: var(--gold); border-color: var(--gold); }
+.icon-btn.is-fav svg, [data-theme="dark"] .card .icon-btn.is-fav svg { stroke: #fff; fill: #fff; }
+.fav-open { position: relative; }
+.fav-badge {
+  position: absolute; top: -5px; left: -5px; min-width: 17px; height: 17px; padding: 0 4px;
+  border-radius: 999px; background: var(--gold); color: var(--navy);
+  font-size: 10px; font-weight: 700; line-height: 17px; text-align: center; pointer-events: none;
+}
 
 .chev {
   display: inline-block; width: 6px; height: 6px; flex: none;
@@ -533,6 +542,21 @@ button { cursor: pointer; }
 .modal__close { width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 1px solid var(--line); background: transparent; display: flex; align-items: center; justify-content: center; }
 .modal__close svg { stroke: var(--gold-ink); }
 .modal__meta { font-size: 13px; color: var(--muted-2); }
+.favs__list { max-height: min(60dvh, 460px); overflow-y: auto; margin: 0 -6px; padding: 0 6px; }
+.favs__group { font-size: 13px; font-weight: 700; color: var(--gold-ink); margin: 12px 0 2px; }
+.favs__group:first-child { margin-top: 0; }
+.favs__item { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line-5); }
+.favs__open {
+  flex: 1; min-width: 0; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  border: none; background: transparent; color: var(--ink); text-align: right; padding: 11px 4px; font-size: 15px; border-radius: 8px;
+}
+.favs__open:hover { background: var(--gold-faint); }
+.favs__size { flex: none; font-size: 12px; color: var(--muted-4); }
+.favs__del { flex: none; width: 32px; height: 32px; padding: 0; border: none; background: transparent; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.favs__del svg { stroke: var(--muted-4); }
+.favs__del:hover { background: rgba(226, 109, 90, .12); }
+.favs__del:hover svg { stroke: #a23a2c; }
+.favs__empty { margin: 8px 0; font-size: 15px; line-height: 1.9; color: var(--muted-6); text-align: center; }
 .modal__meta span { color: var(--gold-ink); }
 .modal__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field {
@@ -749,6 +773,12 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 [data-theme="dark"] .share__head, [data-theme="dark"] .share__foot { border-color: rgba(185, 157, 89, .18); }
 [data-theme="dark"] .modal .icon-btn, [data-theme="dark"] .share .icon-btn, [data-theme="dark"] .modal__close, [data-theme="dark"] .btn-ghost { background: var(--navy-btn); border-color: var(--gold-soft); color: var(--chrome); }
 [data-theme="dark"] .modal svg, [data-theme="dark"] .share .icon-btn svg { stroke: #d9c189; }
+[data-theme="dark"] .favs__group { color: #d9c189; }
+[data-theme="dark"] .favs__item { border-bottom-color: rgba(185, 157, 89, .18); }
+[data-theme="dark"] .favs__open { color: var(--chrome); }
+[data-theme="dark"] .favs__size, [data-theme="dark"] .favs__empty { color: var(--muted-5); }
+[data-theme="dark"] .favs__del svg { stroke: var(--muted-5); }
+[data-theme="dark"] .favs__del:hover svg { stroke: #f0a497; }
 [data-theme="dark"] .field { background: var(--navy); border-color: rgba(185, 157, 89, .3); color: var(--chrome); }
 [data-theme="dark"] .field::placeholder { color: var(--muted-2); }
 [data-theme="dark"] .guide { background: var(--navy-deep); }

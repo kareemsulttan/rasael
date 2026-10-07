@@ -41,6 +41,7 @@
         </button>
         <div class="pop pop--down pop--grid" id="pop-intro-lang" data-list="lang" role="listbox" hidden></div>
       </div>
+      <button class="mode-btn fav-open tip tip--down" data-tip="المفضلة" data-action="favs" aria-label="المفضلة"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="fav-badge" data-bind="fav-count" hidden></span></button>
       <button class="mode-btn tip tip--down" data-tip="الدخول / الاشتراك" data-action="auth" data-bind="auth-btn" aria-label="الدخول / الاشتراك"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
       <button class="mode-btn tip tip--down" data-tip="الوضع الفاتح" data-action="intro-theme" data-bind="intro-theme-btn" aria-label="الوضع الفاتح"><span data-bind="intro-theme-icon">☀</span></button>
     </div>
@@ -80,6 +81,7 @@
     </div>
     <a href="#guide" class="drawer__item" data-action="guide">توجيهات عامة للداعية</a>
     <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
+    <button class="drawer__item" data-action="favs"><span>المفضلة <span class="sub" data-bind="fav-sub"></span></span><span class="glyph">♡</span></button>
     <button class="drawer__item" data-action="intro-theme"><span data-bind="intro-theme-label"></span><span class="glyph" data-bind="intro-theme-icon"></span></button>
     <button class="drawer__item" data-action="toggle-sub" data-sub="intro-lang-sub"><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
     <div class="drawer__sub drawer__sub--chips" id="intro-lang-sub" data-list="lang-chips" hidden></div>
@@ -106,6 +108,7 @@
           <button class="icon-btn tip" data-tip="مشاركة" data-action="share" aria-label="مشاركة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"/><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"/></svg></button>
           <button class="icon-btn tip" data-tip="نسخ النص" data-action="copy" id="btn-copy" aria-label="نسخ النص"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
           <button class="icon-btn tip" data-tip="تحميل البطاقة" data-action="download" aria-label="تحميل البطاقة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="6,11 12,17 18,11"/><path d="M4 21h16"/></svg></button>
+          <button class="icon-btn tip" data-tip="إضافة إلى المفضلة" data-action="fav" data-bind="fav-btn" aria-label="إضافة إلى المفضلة" aria-pressed="false"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
           <button class="icon-btn tip" data-tip="إرسال ملاحظة" data-action="feedback" aria-label="إرسال ملاحظة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
         </div>
         <span class="card__qr-wrap tip tip--side" data-tip="اضغط لمشاركة البطاقة عبر الـ QR">
@@ -150,6 +153,7 @@
           <div class="pop pop--rel" id="pop-bar-rel" role="listbox" hidden><div class="pop__title">دين المدعو</div><div data-list="rel" style="display:contents"></div></div>
         </div>
         <a href="#guide" class="icon-btn tip" data-tip="توجيهات عامة للداعية" data-action="guide" aria-label="توجيهات عامة للداعية"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7"/><path d="M9 11h5"/></svg></a>
+        <button class="icon-btn fav-open tip" data-tip="المفضلة" data-action="favs" aria-label="المفضلة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="fav-badge" data-bind="fav-count" hidden></span></button>
       </div>
     </div>
     <div class="topnav__group topnav__group--ltr">
@@ -186,12 +190,25 @@
   <a href="#" class="drawer__item" data-action="home">الرئيسية</a>
   <a href="#guide" class="drawer__item" data-action="guide">توجيهات عامة للداعية</a>
   <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
+  <button class="drawer__item" data-action="favs"><span>المفضلة <span class="sub" data-bind="fav-sub"></span></span><span class="glyph">♡</span></button>
   <button class="drawer__item" data-action="theme"><span data-bind="theme-label"></span><span class="glyph" data-bind="theme-icon"></span></button>
   <button class="drawer__item" data-action="toggle-sub" data-sub="menu-rel-sub"><span>دين المدعو <span class="sub">· <span data-bind="rel-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub" id="menu-rel-sub" data-list="rel" hidden></div>
   <button class="drawer__item" data-action="toggle-sub" data-sub="menu-lang-sub"><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub drawer__sub--chips" id="menu-lang-sub" data-list="lang-chips" hidden></div>
 </aside>
+
+<!-- المفضلة: الرسائل المحفوظة في هذا المتصفح -->
+<div class="overlay" id="favs" data-action="close-favs" hidden>
+  <div class="modal favs" data-stop>
+    <div class="modal__head">
+      <h3 class="modal__title">المفضلة</h3>
+      <button type="button" class="modal__close" data-action="close-favs" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg></button>
+    </div>
+    <div class="favs__list" id="favs-list"></div>
+    <div class="modal__meta">تُحفظ المفضلة في هذا المتصفح فقط.</div>
+  </div>
+</div>
 
 <!-- إرسال ملاحظة -->
 <div class="overlay" id="feedback" data-action="close-feedback" hidden>

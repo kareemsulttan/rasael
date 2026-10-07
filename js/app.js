@@ -28,6 +28,15 @@ const state = {
 };
 const msgs = () => MESSAGES[RELIGIONS[state.rel].set];
 const current = () => msgs()[state.cur];
+
+// المفضلة في متصفح الزائر: [{ rel, title, msg, size, at }] الأحدث أولًا.
+// تُعرَّف الرسالة بدينها وعنوانها (لا برقمها) حتى تبقى صحيحة إن تغيّر ترتيب الرسائل.
+const FAV_KEY = 'om-favs';
+let favs = (() => {
+  try { const v = JSON.parse(store.get(FAV_KEY) || '[]'); return Array.isArray(v) ? v.filter(f => f?.rel && f?.title) : []; }
+  catch { return []; }
+})();
+const favIndex = () => favs.findIndex(f => f.rel === RELIGIONS[state.rel].key && f.title === current().title);
 const msgUrl = () => `${SITE_URL}#r=${state.rel}&m=${state.cur + 1}&l=${state.len}`;
 const cardText = () => {
   const m = current(); const { text } = segmentsFromHtml(m[sizeField(state.len)]);
@@ -83,6 +92,10 @@ function renderBindings() {
   bind('auth-name', n => n.textContent = userName);
   bind('auth-email', n => n.textContent = state.user?.email || '');
   bind('admin-link', n => n.hidden = !state.admin);
+  const faved = favIndex() >= 0, favTip = faved ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة';
+  bind('fav-btn', n => { n.classList.toggle('is-fav', faved); n.setAttribute('aria-pressed', faved); n.dataset.tip = favTip; n.setAttribute('aria-label', favTip); });
+  bind('fav-count', n => { n.textContent = favs.length; n.hidden = !favs.length; });
+  bind('fav-sub', n => n.textContent = favs.length ? `· ${favs.length}` : '');
   el.body.dataset.theme = state.dark ? 'dark' : 'light';
   el.intro.dataset.theme = state.introDark ? 'dark' : 'light';
 }
@@ -304,6 +317,58 @@ async function shareNative(e) {
   else window.open(href, '_blank', 'noopener');
 }
 
+/* ---------- المفضلة ---------- */
+function saveFavs() { store.set(FAV_KEY, JSON.stringify(favs)); renderBindings(); }
+function toggleFav() {
+  const i = favIndex();
+  if (i >= 0) favs.splice(i, 1);
+  else favs.unshift({ rel: RELIGIONS[state.rel].key, title: current().title, msg: state.cur + 1, size: state.len, at: Date.now() });
+  saveFavs();
+}
+// موضع الرسالة المحفوظة الآن: بعنوانها، وإلا برقمها وقت الحفظ
+function favTarget(f) {
+  const rel = RELIGIONS.findIndex(r => r.key === f.rel); if (rel < 0) return null;
+  const list = MESSAGES[RELIGIONS[rel].set], byTitle = list.findIndex(m => m.title === f.title);
+  const cur = byTitle >= 0 ? byTitle : Math.min(list.length - 1, Math.max(0, (f.msg || 1) - 1));
+  return { rel, cur, title: list[cur].title };
+}
+function renderFavs() {
+  const box = $('#favs-list'), make = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? '' });
+  if (!favs.length) return box.replaceChildren(make('p', 'favs__empty', 'لم تحفظ رسائل بعد. اضغط ♡ أسفل أي رسالة لتجدها هنا.'));
+  // مجمّعة حسب الدين بترتيب القائمة، والأحدث أولًا داخل كل دين
+  box.replaceChildren(...RELIGIONS.flatMap(r => {
+    const items = favs.map((f, i) => ({ f, i, t: favTarget(f) })).filter(x => x.f.rel === r.key && x.t);
+    if (!items.length) return [];
+    return [make('div', 'favs__group', r.name), ...items.map(({ f, i, t }) => {
+      const row = make('div', 'favs__item');
+      const open = make('button', 'favs__open');
+      Object.assign(open.dataset, { action: 'fav-open', i });
+      open.append(make('span', '', t.title), make('span', 'favs__size', SIZES.find(s => s.key === f.size)?.label || ''));
+      const del = make('button', 'favs__del');
+      Object.assign(del.dataset, { action: 'fav-del', i });
+      del.setAttribute('aria-label', 'إزالة من المفضلة'); del.title = 'إزالة';
+      del.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
+      row.append(open, del);
+      return row;
+    })];
+  }));
+}
+function openFavs() {
+  renderFavs();
+  // يتبع وضع الصفحة الظاهرة: البداية أو الرسائل
+  $('#favs').dataset.theme = (state.intro ? state.introDark : state.dark) ? 'dark' : 'light';
+  $('#favs').hidden = false; closeMenu(); closeIntroMenu();
+}
+function openFav(i) {
+  const f = favs[i], t = f && favTarget(f); if (!t) return;
+  state.rel = t.rel; state.cur = t.cur; state.step = 3;
+  state.len = SIZE_KEYS.includes(f.size) ? f.size : state.defLen;
+  $('#favs').hidden = true;
+  if (state.intro) { state.intro = false; el.intro.hidden = true; }
+  history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
+  renderLists(); renderCardView(true);
+}
+
 /* ---------- الملاحظات ---------- */
 // تُحفظ الملاحظة في جدول feedback، ويقرؤها المشرف في صفحة الإحصاءات
 function feedbackMsg(text, ok = false) {
@@ -503,6 +568,9 @@ const actions = {
   copy: (btn) => copyText(btn), 'share-copy': (btn) => copyText(btn),
   download: downloadCard, 'share-download': downloadCard,
   feedback: openFeedback, 'close-feedback': () => $('#feedback').hidden = true,
+  fav: toggleFav, favs: openFavs, 'close-favs': () => $('#favs').hidden = true,
+  'fav-open': (btn) => openFav(+btn.dataset.i),
+  'fav-del': (btn) => { favs.splice(+btn.dataset.i, 1); saveFavs(); renderFavs(); },
   'msg-qr': () => { $('#msg-qr-img').src = el.cqr.src; $('#msg-qr').hidden = false; },
   'close-msg-qr': () => $('#msg-qr').hidden = true,
   'site-qr': () => { $('#site-qr').hidden = false; closeIntroMenu(); }, 'close-site-qr': () => $('#site-qr').hidden = true,
