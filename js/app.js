@@ -493,6 +493,21 @@ function openAuth(mode = state.user ? 'account' : 'in', msg = '', ok = false, le
   $('#auth').hidden = false; closeMenu(); closeIntroMenu();
   $('#auth-form').classList.toggle('auth--dark', state.intro ? state.introDark : state.dark);
   auth.preload();
+  if (mode === 'in' || mode === 'up') showGoogleButton();
+}
+// تجربة زر Google الرسمي: لا يظهر إلا لمن فتح الموقع بـ ?gis في الرابط، حتى نعتمده
+const GIS = (() => {
+  try { if (new URLSearchParams(location.search).has('gis')) sessionStorage.setItem('om-gis', '1'); return sessionStorage.getItem('om-gis') === '1'; }
+  catch { return false; }
+})();
+function showGoogleButton() {
+  if (!GIS) return;
+  const box = $('#gsi-btn'), ours = $('.auth__google');
+  auth.renderGoogleButton(box, {
+    dark: $('#auth-form').classList.contains('auth--dark'),
+    width: Math.max(200, Math.min(400, box.parentElement.clientWidth)),
+    onDone: err => err ? authMsg(auth.errorText(err)) : ($('#auth').hidden = true),
+  }).then(() => { box.hidden = false; ours.hidden = true; }).catch(() => {});   // إن تعذّر تحميل أداة جوجل يبقى زرنا
 }
 // يُعلَّم الحقل المخطئ بإطار أحمر، ويزول التعليم حين يُعدَّل
 $('#auth-form').addEventListener('input', e => e.target.removeAttribute('aria-invalid'));

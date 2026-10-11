@@ -1,6 +1,6 @@
 // الحسابات عبر Supabase: الدخول، الاشتراك، الخروج، واستعادة كلمة المرور.
 // مكتبة Supabase تُحمَّل عند الحاجة فقط، فلا يتأثر باقي الموقع إن تعذّر تحميلها.
-import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
+import { SUPABASE_URL, SUPABASE_KEY, GOOGLE_CLIENT_ID } from './config.js';
 
 const LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
 const STORAGE_KEY = 'om-auth';
@@ -74,6 +74,31 @@ export async function signUp({ name, email, pass }) {
 export async function signInWithGoogle() {
   try { sessionStorage.setItem(RETURN_KEY, location.hash); } catch {}
   return call(a => a.signInWithOAuth({ provider: 'google', options: { redirectTo: SITE_URL, queryParams: { prompt: 'select_account' } } }));
+}
+
+// زر Google الرسمي (Google Identity Services): يتم الدخول في صفحتنا نفسها، فتعرض جوجل عنوان موقعنا
+// لا عنوان Supabase، ثم نسلّم هوية جوجل إلى Supabase. أداة جوجل تُحمَّل عند فتح نافذة الدخول فقط.
+const GSI = 'https://accounts.google.com/gsi/client';
+let gsiPromise = null;
+const loadGsi = () => gsiPromise ??= new Promise((resolve, reject) => {
+  const s = Object.assign(document.createElement('script'), { src: GSI, async: true });
+  s.onload = () => window.google?.accounts?.id ? resolve(window.google.accounts.id) : reject(new Error('gsi'));
+  s.onerror = () => { gsiPromise = null; s.remove(); reject(new Error('gsi')); };
+  document.head.append(s);
+});
+const hex = bytes => [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
+// يرسم الزر داخل box. onDone(err) بعد اكتمال الدخول (أو فشله) في Supabase.
+export async function renderGoogleButton(box, { dark, width, onDone }) {
+  const id = await loadGsi();
+  // رقم يُستعمل مرة واحدة: جوجل تضع بصمته في الهوية، وSupabase يطابقها بالرقم نفسه فلا تُعاد الهوية
+  const nonce = hex(crypto.getRandomValues(new Uint8Array(16)));
+  id.initialize({
+    client_id: GOOGLE_CLIENT_ID, ux_mode: 'popup', auto_select: false,
+    nonce: hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(nonce))),
+    callback: ({ credential }) => call(a => a.signInWithIdToken({ provider: 'google', token: credential, nonce })).then(() => onDone(), onDone),
+  });
+  box.replaceChildren();
+  id.renderButton(box, { type: 'standard', theme: dark ? 'filled_black' : 'outline', size: 'large', text: 'continue_with', shape: 'pill', logo_alignment: 'center', locale: 'ar', width });
 }
 export const signOut = () => call(a => a.signOut({ scope: 'local' }));
 export const sendReset = email => call(a => a.resetPasswordForEmail(email, { redirectTo: SITE_URL }));
