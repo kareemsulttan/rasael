@@ -655,7 +655,7 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 }
 .auth__google:hover { background: #f2f2f2; }
 .auth__google:disabled { opacity: .6; cursor: wait; }
-/* زر Google الرسمي (تجربة): تعرضه جوجل داخل إطار، ويحل محل زرنا إن تحمّل */
+/* زر Google الرسمي: تعرضه جوجل، وزرنا أعلاه احتياط إن تعذّر تحميله */
 .auth__gsi { display: flex; justify-content: center; min-height: 44px; }
 .auth__gsi[hidden], .auth__google[hidden] { display: none; }
 .auth--dark .auth__google { background: #131314; color: #e3e3e3; border-color: #8e918f; }

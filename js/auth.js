@@ -89,6 +89,7 @@ const loadGsi = () => gsiPromise ??= new Promise((resolve, reject) => {
 const hex = bytes => [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
 // يرسم الزر داخل box. onDone(err) بعد اكتمال الدخول (أو فشله) في Supabase.
 export async function renderGoogleButton(box, { dark, width, onDone }) {
+  if (!GOOGLE_CLIENT_ID) throw new Error('gsi');
   const id = await loadGsi();
   // رقم يُستعمل مرة واحدة: جوجل تضع بصمته في الهوية، وSupabase يطابقها بالرقم نفسه فلا تُعاد الهوية
   const nonce = hex(crypto.getRandomValues(new Uint8Array(16)));

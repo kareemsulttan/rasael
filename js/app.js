@@ -495,19 +495,18 @@ function openAuth(mode = state.user ? 'account' : 'in', msg = '', ok = false, le
   auth.preload();
   if (mode === 'in' || mode === 'up') showGoogleButton();
 }
-// تجربة زر Google الرسمي: لا يظهر إلا لمن فتح الموقع بـ ?gis في الرابط، حتى نعتمده
-const GIS = (() => {
-  try { if (new URLSearchParams(location.search).has('gis')) sessionStorage.setItem('om-gis', '1'); return sessionStorage.getItem('om-gis') === '1'; }
-  catch { return false; }
-})();
+// زر Google الرسمي هو الأساسي: يتم الدخول في صفحتنا فتعرض جوجل عنوان موقعنا.
+// زرنا (التحويل عبر Supabase) احتياط إن تعذّر تحميل أداة جوجل أو أبطأت.
 function showGoogleButton() {
-  if (!GIS) return;
   const box = $('#gsi-btn'), ours = $('.auth__google');
+  const useOurs = () => { box.hidden = true; ours.hidden = false; };
+  box.hidden = false; ours.hidden = true;
+  const slow = setTimeout(useOurs, 5000);
   auth.renderGoogleButton(box, {
     dark: $('#auth-form').classList.contains('auth--dark'),
     width: Math.max(200, Math.min(400, box.parentElement.clientWidth)),
     onDone: err => err ? authMsg(auth.errorText(err)) : ($('#auth').hidden = true),
-  }).then(() => { box.hidden = false; ours.hidden = true; }).catch(() => {});   // إن تعذّر تحميل أداة جوجل يبقى زرنا
+  }).then(() => { clearTimeout(slow); box.hidden = false; ours.hidden = true; }, () => { clearTimeout(slow); useOurs(); });
 }
 // يُعلَّم الحقل المخطئ بإطار أحمر، ويزول التعليم حين يُعدَّل
 $('#auth-form').addEventListener('input', e => e.target.removeAttribute('aria-invalid'));
