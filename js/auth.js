@@ -64,8 +64,8 @@ export const favorites = {
   remove: ({ rel, title }) => db(c => c.from('favorites').delete().match({ rel, title })),
 };
 export const signIn = (email, password) => call(a => a.signInWithPassword({ email, password }));
-export async function signUp({ name, country, email, pass }) {
-  const data = await call(a => a.signUp({ email, password: pass, options: { data: { full_name: name, country }, emailRedirectTo: SITE_URL } }));
+export async function signUp({ name, email, pass }) {
+  const data = await call(a => a.signUp({ email, password: pass, options: { data: { full_name: name }, emailRedirectTo: SITE_URL } }));
   // البريد المسجّل والمؤكَّد من قبل: يردّ Supabase بنجاح شكلي بلا هويات ولا يرسل رسالة
   if (data.user && !data.session && data.user.identities?.length === 0) throw { code: 'user_already_exists' };
   return data;
@@ -75,8 +75,6 @@ export async function signInWithGoogle() {
   try { sessionStorage.setItem(RETURN_KEY, location.hash); } catch {}
   return call(a => a.signInWithOAuth({ provider: 'google', options: { redirectTo: SITE_URL, queryParams: { prompt: 'select_account' } } }));
 }
-// الدولة لمن دخل بـ Google (الصلاحية في قاعدة البيانات: الدولة فقط، ولصاحب الحساب فقط)
-export const setCountry = (id, country) => db(c => c.from('profiles').update({ country }).eq('id', id));
 export const signOut = () => call(a => a.signOut({ scope: 'local' }));
 export const sendReset = email => call(a => a.resetPasswordForEmail(email, { redirectTo: SITE_URL }));
 export const setPassword = password => call(a => a.updateUser({ password }));

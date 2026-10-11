@@ -288,7 +288,7 @@
         <button type="button" class="auth__tab" data-auth-tab="in" role="tab" aria-selected="true">الدخول</button>
         <button type="button" class="auth__tab" data-auth-tab="up" role="tab" aria-selected="false">مستخدم جديد</button>
       </div>
-      <h3 class="auth__title" data-bind="auth-title" data-auth-only="forgot reset account country" hidden></h3>
+      <h3 class="auth__title" data-bind="auth-title" data-auth-only="forgot reset account" hidden></h3>
       <button type="button" class="auth__close" data-action="close-auth" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <p class="auth__lead" data-bind="auth-lead" hidden></p>
@@ -299,19 +299,6 @@
     <div data-auth-only="up" hidden>
       <label for="auth-name">الاسم</label>
       <input id="auth-name" aria-required="true" type="text" placeholder="الاسم" autocomplete="name">
-    </div>
-    <div data-auth-only="up country" hidden>
-      <label for="auth-country">الدولة</label>
-      <div class="cpick" id="cpick">
-        <button type="button" id="auth-country" class="cpick__btn" value="" aria-required="true" aria-haspopup="listbox" aria-expanded="false">
-          <span class="cpick__val">اختر دولتك</span><span class="chev"></span>
-        </button>
-        <div class="cpick__pop" hidden>
-          <input type="search" class="cpick__search" placeholder="ابحث عن دولتك" aria-label="ابحث عن دولة" role="combobox" aria-controls="cpick-list" aria-expanded="true" autocomplete="off">
-          <ul class="cpick__list" id="cpick-list" role="listbox" aria-label="الدول"></ul>
-          <p class="cpick__empty" hidden>لا توجد نتائج</p>
-        </div>
-      </div>
     </div>
     <div data-auth-only="in up forgot">
       <label for="auth-email">البريد الإلكتروني</label>
@@ -337,11 +324,11 @@
       <span dir="ltr" data-bind="auth-email"></span>
     </div>
     <p class="auth__msg" id="auth-msg" role="status" hidden></p>
-    <button type="submit" class="auth__submit" data-bind="auth-cta" data-auth-only="in up forgot reset country">دخول</button>
+    <button type="submit" class="auth__submit" data-bind="auth-cta" data-auth-only="in up forgot reset">دخول</button>
     <div data-auth-only="account" hidden><a class="auth__submit auth__admin" href="admin.html" data-bind="admin-link" hidden>الإحصاءات والمشتركون</a></div>
     <button type="button" class="auth__submit auth__submit--ghost" data-action="sign-out" data-auth-only="account" hidden>تسجيل الخروج</button>
     <div class="auth__foot" data-auth-only="in">مستخدم جديد؟ <a href="#" data-action="auth-swap">اشترك</a></div>
-    <div class="auth__foot" data-auth-only="up country" hidden>نحفظ اسمك ودولتك وبريدك فقط. <a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></div>
+    <div class="auth__foot" data-auth-only="up" hidden>نحفظ اسمك وبريدك ودولتك فقط. <a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></div>
     <div class="auth__foot" data-auth-only="forgot" hidden><a href="#" data-action="auth-in">العودة إلى الدخول</a></div>
   </form>
 </div>

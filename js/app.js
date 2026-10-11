@@ -1,5 +1,5 @@
 // منطق الصفحة: الحالة، التنقّل بين الرسائل، القوائم، المشاركة، والتفضيلات.
-import { MESSAGES, RELIGIONS, LANGS, GUIDE, SIZES, COUNTRIES } from './data.js';
+import { MESSAGES, RELIGIONS, LANGS, GUIDE, SIZES } from './data.js';
 import { qrDataUrl } from './qr.js';
 import { renderCard, segmentsFromHtml } from './card.js';
 import * as auth from './auth.js';
@@ -457,13 +457,13 @@ $('#feedback-form').addEventListener('submit', async e => {
 });
 
 /* ---------- الحسابات (Supabase عبر auth.js) ---------- */
-const AUTH_CTA = { in: 'دخول', up: 'إنشاء حساب', forgot: 'إرسال رابط الاستعادة', reset: 'حفظ كلمة المرور', country: 'حفظ' };
-const AUTH_TITLE = { forgot: 'استعادة كلمة المرور', reset: 'كلمة مرور جديدة', account: 'حسابي', country: 'أكمل اشتراكك' };
+const AUTH_CTA = { in: 'دخول', up: 'إنشاء حساب', forgot: 'إرسال رابط الاستعادة', reset: 'حفظ كلمة المرور' };
+const AUTH_TITLE = { forgot: 'استعادة كلمة المرور', reset: 'كلمة مرور جديدة', account: 'حسابي' };
 let authMode = 'in', authLead = '';
 function setAuthMode(mode, msg = '', ok = false) {
   authMode = mode;
   // سطر تمهيدي حين تُفتح النافذة من ميزة للمشتركين (مثل المفضلة)
-  bind('auth-lead', n => { n.textContent = authLead; n.hidden = !authLead || !['in', 'up', 'country'].includes(mode); });
+  bind('auth-lead', n => { n.textContent = authLead; n.hidden = !authLead || !['in', 'up'].includes(mode); });
   $$('[data-auth-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.authTab === mode));
   $$('[data-auth-only]').forEach(n => n.hidden = !n.dataset.authOnly.split(' ').includes(mode));
   $('#auth-pass').autocomplete = mode === 'in' ? 'current-password' : 'new-password';
@@ -490,77 +490,15 @@ function authMsg(text, ok = false) {
 function openAuth(mode = state.user ? 'account' : 'in', msg = '', ok = false, lead = '') {
   authLead = lead;
   setAuthMode(mode, msg, ok);
-  $('#auth').hidden = false; closeMenu(); closeIntroMenu(); cpick.close();
+  $('#auth').hidden = false; closeMenu(); closeIntroMenu();
   $('#auth-form').classList.toggle('auth--dark', state.intro ? state.introDark : state.dark);
   auth.preload();
 }
-/* ---------- اختيار الدولة: قائمة بالأعلام مع بحث ---------- */
-// القيمة المختارة في #auth-country.value (زر)، فيبقى التحقق والإرسال كما هما
-// توحيد الحروف ليجد «الامارات» «الإمارات» و«السعوديه» «السعودية»
-const normAr = s => s.toLowerCase().normalize('NFKD').replace(/[ً-ٰٟ̀-ͯ]/g, '')
-  .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/^ال|\sال/g, ' ').trim();
-const flagImg = c => `<img class="cpick__flag" src="images/flags/${c.toLowerCase()}.svg" alt="" loading="lazy" width="22" height="16">`;
-function renderCountries() {
-  let ar, en; try { ar = new Intl.DisplayNames(['ar'], { type: 'region' }); en = new Intl.DisplayNames(['en'], { type: 'region' }); } catch {}
-  const list = COUNTRIES.CODES.map(c => [c, COUNTRIES.NAMES[c] || ar?.of(c) || c]).sort((a, b) => a[1].localeCompare(b[1], 'ar'));
-  $('#cpick-list').innerHTML = list.map(([c, n]) =>
-    `<li role="option" id="cp-${c}" data-code="${c}" data-name="${n}" data-q="${normAr(`${n} ${en?.of(c) || ''} ${c}`)}" aria-selected="false">${flagImg(c)}<span>${n}</span></li>`).join('');
-}
-const cpick = {
-  root: $('#cpick'), btn: $('#auth-country'), pop: $('#cpick .cpick__pop'), search: $('#cpick .cpick__search'), list: $('#cpick-list'),
-  visible() { return $$('#cpick-list li:not([hidden])'); },
-  open() {
-    this.pop.hidden = false; this.btn.setAttribute('aria-expanded', 'true');
-    this.search.value = ''; this.filter(); this.search.focus();
-    const sel = this.list.querySelector('[aria-selected="true"]');
-    if (sel) { this.activate(sel); sel.scrollIntoView({ block: 'center' }); }
-  },
-  close(refocus) {
-    if (this.pop.hidden) return;
-    this.pop.hidden = true; this.btn.setAttribute('aria-expanded', 'false');
-    if (refocus) this.btn.focus();
-  },
-  filter() {
-    const q = normAr(this.search.value);
-    let first = null;
-    for (const li of this.list.children) { li.hidden = !!q && !li.dataset.q.includes(q); if (!li.hidden) first ??= li; }
-    $('#cpick .cpick__empty').hidden = !!first;
-    this.activate(first);
-  },
-  activate(li) {
-    this.list.querySelector('.is-active')?.classList.remove('is-active');
-    if (li) { li.classList.add('is-active'); li.scrollIntoView({ block: 'nearest' }); }
-    li ? this.search.setAttribute('aria-activedescendant', li.id) : this.search.removeAttribute('aria-activedescendant');
-  },
-  choose(li) {
-    this.list.querySelector('[aria-selected="true"]')?.setAttribute('aria-selected', 'false');
-    li.setAttribute('aria-selected', 'true');
-    this.btn.value = li.dataset.code; this.btn.removeAttribute('aria-invalid');
-    this.btn.querySelector('.cpick__val').innerHTML = `${flagImg(li.dataset.code)}<span>${li.dataset.name}</span>`;
-    this.close(true);
-  },
-};
-cpick.btn.addEventListener('click', () => cpick.pop.hidden ? cpick.open() : cpick.close());
-cpick.search.addEventListener('input', () => cpick.filter());
-cpick.list.addEventListener('click', e => { const li = e.target.closest('li'); if (li) cpick.choose(li); });
-cpick.root.addEventListener('keydown', e => {
-  if (cpick.pop.hidden) return;
-  const items = cpick.visible(), i = items.indexOf(cpick.list.querySelector('.is-active'));
-  if (e.key === 'ArrowDown') cpick.activate(items[Math.min(i + 1, items.length - 1)]);
-  else if (e.key === 'ArrowUp') cpick.activate(items[Math.max(i - 1, 0)]);
-  else if (e.key === 'Enter') { if (items[i]) cpick.choose(items[i]); }
-  else if (e.key === 'Escape') cpick.close(true);
-  else if (e.key === 'Tab') { cpick.close(); return; }
-  else return;
-  e.preventDefault(); e.stopPropagation();
-});
-document.addEventListener('pointerdown', e => { if (!cpick.root.contains(e.target)) cpick.close(); });
 // يُعلَّم الحقل المخطئ بإطار أحمر، ويزول التعليم حين يُعدَّل
 $('#auth-form').addEventListener('input', e => e.target.removeAttribute('aria-invalid'));
 function authInvalid() {
   const email = $('#auth-email'), pass = $('#auth-pass').value, isNew = authMode === 'up' || authMode === 'reset';
   if (authMode === 'up' && !$('#auth-name').value.trim()) return ['اكتب اسمك.', 'auth-name'];
-  if ((authMode === 'up' || authMode === 'country') && !$('#auth-country').value) return ['اختر دولتك.', 'auth-country'];
   if (['in', 'up', 'forgot'].includes(authMode) && (!email.value.trim() || !email.validity.valid)) return ['اكتب بريدًا إلكترونيًا صحيحًا.', 'auth-email'];
   if (authMode === 'in' && !pass) return ['اكتب كلمة المرور.', 'auth-pass'];
   if (isNew && pass.length < 8) return ['كلمة المرور 8 أحرف على الأقل.', 'auth-pass'];
@@ -576,7 +514,6 @@ const AUTH_SUBMIT = {
   },
   forgot: async f => { await auth.sendReset(f.email); authMsg('إن كان البريد مسجّلًا فسيصلك رابط لتعيين كلمة مرور جديدة.', true); },
   reset: async f => { await auth.setPassword(f.pass); setAuthMode('account', 'حُفظت كلمة المرور الجديدة.', true); },
-  country: async f => { await auth.setCountry(state.user.id, f.country); $('#auth').hidden = true; },
 };
 $('#auth-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -584,7 +521,7 @@ $('#auth-form').addEventListener('submit', async e => {
   const bad = authInvalid();
   if (bad) { const field = $('#' + bad[1]); field.setAttribute('aria-invalid', 'true'); field.focus(); return authMsg(bad[0]); }
   const btn = $('#auth-form [type="submit"]');
-  const f = { name: $('#auth-name').value.trim(), country: $('#auth-country').value, email: $('#auth-email').value.trim(), pass: $('#auth-pass').value };
+  const f = { name: $('#auth-name').value.trim(), email: $('#auth-email').value.trim(), pass: $('#auth-pass').value };
   btn.disabled = true; authMsg('');
   try { await AUTH_SUBMIT[authMode](f); $('#auth-pass').value = $('#auth-pass2').value = ''; showPasswords(false); }
   catch (err) { authMsg(auth.errorText(err)); }
@@ -607,8 +544,8 @@ auth.onUser(user => {
     profileFor = user.id;
     auth.myProfile().then(p => {
       state.admin = !!p?.is_admin; renderBindings();
-      // من دخل بحساب Google لم تصلنا دولته: نسأله عنها (وتُسأل مرة أخرى في الزيارة التالية إن أغلق النافذة)
-      if (p && !p.country && $('#auth').hidden) openAuth('country', '', false, 'اختر دولتك لإكمال اشتراكك.');
+      // الدولة تُعرف من اتصال المشترك (claim_country في schema.sql)، فلا نسأله عنها
+      if (p && !p.country) auth.rpc('claim_country').catch(() => {});
     }).catch(() => {});
   }
   renderBindings();
@@ -728,7 +665,6 @@ el.body.classList.remove('is-loading');
 
 // الحسابات: تُخفى أزرار الدخول والمفضلة ما لم تُضبط إعدادات Supabase في config.js
 if (!auth.authEnabled) $$('[data-action="auth"], [data-action="fav"], [data-action="favs"]').forEach(n => n.hidden = true);
-renderCountries();
 track('visit');
 auth.init().then(() => {
   const cb = auth.callback; if (!cb || !auth.authEnabled) return;

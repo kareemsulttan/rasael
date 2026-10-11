@@ -7,7 +7,7 @@
 grant usage on schema public to anon, authenticated;
 
 -- 1) المشتركون ---------------------------------------------------------------
--- صف لكل مستخدم يُنشأ تلقائيًا عند الاشتراك من بيانات النموذج (الاسم والدولة)، أو من حساب Google (الاسم فقط).
+-- صف لكل مستخدم يُنشأ تلقائيًا عند الاشتراك، والاسم من النموذج أو من حساب Google. الدولة من اتصاله (claim_country).
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text not null default '',
@@ -17,17 +17,13 @@ create table if not exists public.profiles (
 );
 alter table public.profiles enable row level security;
 
--- المستخدم يقرأ صفه فقط، ولا يعدّل منه إلا دولته (فلا يستطيع منح نفسه صلاحية المشرف).
--- تعديل الدولة لمن دخل بحساب Google: جوجل لا يعطينا الدولة، فنسأله عنها بعد أول دخول.
+-- المستخدم يقرأ صفه فقط، ولا يعدّل شيئًا (فلا يستطيع منح نفسه صلاحية المشرف)
 drop policy if exists "profiles: read own" on public.profiles;
 create policy "profiles: read own" on public.profiles
   for select to authenticated using (id = (select auth.uid()));
-drop policy if exists "profiles: update own country" on public.profiles;
-create policy "profiles: update own country" on public.profiles
-  for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
+drop policy if exists "profiles: update own country" on public.profiles;   -- كانت لاختيار الدولة يدويًا
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
-grant update (country) on public.profiles to authenticated;
 
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = '' as $$
@@ -54,6 +50,25 @@ select id,
        case when raw_user_meta_data ->> 'country' ~ '^[A-Za-z]{2}$' then upper(raw_user_meta_data ->> 'country') end
 from auth.users
 on conflict (id) do nothing;
+
+-- الدولة تُعرف تلقائيًا من اتصال المشترك: طلبات Supabase تمر عبر Cloudflare الذي يضيف إليها
+-- رمز دولة الاتصال (cf-ipcountry)، ولا يُحفظ عنوان الاتصال نفسه. XX: غير معروفة، T1: شبكة Tor.
+create or replace function public.request_country() returns text
+language sql stable set search_path = '' as $$
+  select c from (select upper(nullif(current_setting('request.headers', true), '')::json ->> 'cf-ipcountry') as c) x
+  where c ~ '^[A-Z]{2}$' and c not in ('XX', 'T1')
+$$;
+
+-- يملأ دولة المشترك إن كانت فارغة، ويستدعيه الموقع بعد الدخول (الاشتراك نفسه لا يمر بطلب يحمل الدولة)
+create or replace function public.claim_country() returns text
+language plpgsql security definer set search_path = '' as $$
+declare c text := public.request_country();
+begin
+  update public.profiles set country = c where id = (select auth.uid()) and country is null and c is not null;
+  return (select country from public.profiles where id = (select auth.uid()));
+end $$;
+
+drop function if exists public.my_country();   -- دالة تجربة سابقة
 
 
 -- 2) سجل الاستخدام ------------------------------------------------------------
@@ -212,7 +227,9 @@ begin
   delete from public.feedback where id = feedback_id;
 end $$;
 
-revoke all on function public.handle_new_user() from public, anon, authenticated;
+revoke all on function public.handle_new_user(), public.request_country() from public, anon, authenticated;
+revoke all on function public.claim_country() from public, anon;
+grant execute on function public.claim_country() to authenticated;
 revoke all on function public.is_admin(), public.admin_stats(int), public.admin_users(),
   public.admin_feedback(), public.admin_delete_feedback(bigint) from public, anon;
 grant execute on function public.is_admin(), public.admin_stats(int), public.admin_users(),

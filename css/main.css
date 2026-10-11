@@ -620,33 +620,6 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 .auth--dark [aria-invalid="true"] { border-color: #e26d5a; }
 .auth--dark select { color-scheme: dark; }
 
-/* اختيار الدولة: زر بشكل الحقل، وتحته قائمة بالأعلام وحقل بحث */
-.cpick { position: relative; margin-bottom: 14px; }
-.cpick__btn {
-  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  border: 1px solid var(--gold-soft); background: transparent; color: inherit;
-  border-radius: 10px; padding: 11px 14px; font: inherit; font-size: 15px; text-align: right;
-}
-.cpick__btn .chev { margin-inline-end: 4px; }
-.cpick__btn[aria-expanded="true"] .chev { transform: rotate(-135deg) translate(-2px, -2px); }
-.cpick__val { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.cpick__val span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cpick__flag { width: 22px; height: 16px; flex: none; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); }
-.cpick__pop {
-  position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 5; padding: 8px;
-  background: var(--card); border: 1px solid var(--gold-soft); border-radius: 12px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, .18);
-}
-.auth .cpick__search { margin-bottom: 6px; padding: 9px 12px; font-size: 14px; }
-.cpick__list { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; overscroll-behavior: contain; }
-.cpick__list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 15px; cursor: pointer; }
-.cpick__list li[hidden] { display: none; }
-.cpick__list li:hover, .cpick__list li.is-active { background: var(--gold-faint); }
-.cpick__list li[aria-selected="true"] { font-weight: 700; color: var(--gold-ink); }
-.cpick__empty { margin: 0; padding: 12px 10px; font-size: 14px; color: #6b7280; text-align: center; }
-.auth--dark .cpick__pop { background: var(--navy-3); box-shadow: 0 16px 36px rgba(0, 0, 0, .5); color-scheme: dark; }
-.auth--dark .cpick__list li[aria-selected="true"] { color: #d9c189; }
-.auth--dark .cpick__empty { color: var(--muted-5); }
 .auth__admin { display: block; text-align: center; text-decoration: none; margin: 0 0 10px; }
 .auth__admin:hover { color: var(--navy); }
 .auth input[dir="ltr"] { text-align: left; }
