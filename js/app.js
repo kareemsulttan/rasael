@@ -460,10 +460,15 @@ $('#feedback-form').addEventListener('submit', async e => {
 const AUTH_CTA = { in: 'دخول', up: 'إنشاء حساب', forgot: 'إرسال رابط الاستعادة', reset: 'حفظ كلمة المرور' };
 const AUTH_TITLE = { forgot: 'استعادة كلمة المرور', reset: 'كلمة مرور جديدة', account: 'حسابي' };
 let authMode = 'in', authLead = '';
+// حقول البريد مطويّة ما لم يكن الزائر دخل بالبريد من قبل (نتذكّر آخر طريقة دخول)
+const MAIL_KEY = 'om-auth-mail';
+let mailOpen = true;
 function setAuthMode(mode, msg = '', ok = false) {
   authMode = mode;
   // سطر تمهيدي حين تُفتح النافذة من ميزة للمشتركين (مثل المفضلة)
   bind('auth-lead', n => { n.textContent = authLead; n.hidden = !authLead || !['in', 'up'].includes(mode); });
+  $('#auth-form').classList.toggle('is-collapsed', !mailOpen && ['in', 'up'].includes(mode));
+  bind('auth-mail-cta', n => n.textContent = mode === 'up' ? 'الاشتراك بالبريد الإلكتروني' : 'الدخول بالبريد الإلكتروني');
   $$('[data-auth-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.authTab === mode));
   $$('[data-auth-only]').forEach(n => n.hidden = !n.dataset.authOnly.split(' ').includes(mode));
   $('#auth-pass').autocomplete = mode === 'in' ? 'current-password' : 'new-password';
@@ -489,6 +494,7 @@ function authMsg(text, ok = false) {
 }
 function openAuth(mode = state.user ? 'account' : 'in', msg = '', ok = false, lead = '') {
   authLead = lead;
+  mailOpen = !!msg || store.get(MAIL_KEY) === '1';
   setAuthMode(mode, msg, ok);
   $('#auth').hidden = false; closeMenu(); closeIntroMenu();
   $('#auth-form').classList.toggle('auth--dark', state.intro ? state.introDark : state.dark);
@@ -505,7 +511,7 @@ function showGoogleButton() {
   auth.renderGoogleButton(box, {
     dark: $('#auth-form').classList.contains('auth--dark'),
     width: Math.max(200, Math.min(400, box.parentElement.clientWidth)),
-    onDone: err => err ? authMsg(auth.errorText(err)) : ($('#auth').hidden = true),
+    onDone: err => { if (err) return authMsg(auth.errorText(err)); store.del(MAIL_KEY); $('#auth').hidden = true; },
   }).then(() => { clearTimeout(slow); box.hidden = false; ours.hidden = true; }, () => { clearTimeout(slow); useOurs(); });
 }
 // يُعلَّم الحقل المخطئ بإطار أحمر، ويزول التعليم حين يُعدَّل
@@ -520,9 +526,10 @@ function authInvalid() {
   return null;
 }
 const AUTH_SUBMIT = {
-  in: async f => { await auth.signIn(f.email, f.pass); $('#auth').hidden = true; },
+  in: async f => { await auth.signIn(f.email, f.pass); store.set(MAIL_KEY, '1'); $('#auth').hidden = true; },
   up: async f => {
     const { session } = await auth.signUp(f);
+    store.set(MAIL_KEY, '1');
     if (session) $('#auth').hidden = true;
     else authMsg(`أرسلنا رسالة تأكيد إلى ${f.email}، افتحها لتفعيل حسابك.`, true);
   },
@@ -542,7 +549,7 @@ $('#auth-form').addEventListener('submit', async e => {
   finally { btn.disabled = false; }
 });
 async function googleSignIn(btn) {
-  btn.disabled = true; authMsg('');
+  btn.disabled = true; authMsg(''); store.del(MAIL_KEY);
   try { await auth.signInWithGoogle(); }   // ينتقل المتصفح إلى صفحة Google
   catch (err) { authMsg(auth.errorText(err)); btn.disabled = false; }
 }
@@ -590,6 +597,7 @@ const actions = {
   'auth-forgot': () => setAuthMode('forgot'), 'auth-in': () => setAuthMode('in'),
   'toggle-pass': () => showPasswords($('#auth-pass').type === 'password'),
   'sign-out': signOut, 'auth-google': googleSignIn,
+  'auth-mail': () => { mailOpen = true; setAuthMode(authMode); $(authMode === 'up' ? '#auth-name' : '#auth-email').focus(); },
   'hide-hint': hideHint,
 };
 

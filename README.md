@@ -63,6 +63,8 @@ server.js           خادم Node بسيط للنشر على Railway
    - في Supabase ← **Authentication ← Sign In / Providers ← Google**: فعّله والصق Client ID وClient secret.
    - انسخ Client ID إلى `GOOGLE_CLIENT_ID` في `js/config.js` (عام بطبيعته). يُعرض به زر Google الرسمي في نافذة الدخول،
      فتقول جوجل «المتابعة إلى byenah.com» بدل عنوان Supabase. إن تعذّر تحميل أداة جوجل يظهر زر احتياطي يحوّل عبر Supabase.
+   - حقول البريد في نافذة الدخول مطويّة خلف زر «الدخول / الاشتراك بالبريد الإلكتروني»، وتظهر مباشرة
+     لمن دخل بالبريد من قبل في المتصفح نفسه (`om-auth-mail`).
    - الدولة لا تُطلب من المشترك: تُعرف من اتصاله بعد الدخول (`claim_country` في `schema.sql`)، بالبريد أو بجوجل.
 
 ### المشرفون

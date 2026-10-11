@@ -663,6 +663,9 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 .auth__or { display: flex; align-items: center; gap: 12px; margin: 16px 0; font-size: 13px; color: #6b7280; }
 .auth__or::before, .auth__or::after { content: ""; flex: 1; height: 1px; background: var(--gold-soft); }
 .auth--dark .auth__or { color: var(--muted-5); }
+/* البريد مطويّ: النافذة بزر Google وزر «… بالبريد الإلكتروني»، والحقول تظهر بالضغط عليه */
+.auth .auth__mail-btn { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; height: 40px; padding: 0 12px; font-size: 14px; font-weight: 500; }   /* بمقاس زر Google */
+.auth.is-collapsed .auth__mail, .auth.is-collapsed .auth__or, .auth:not(.is-collapsed) .auth__mail-btn { display: none; }
 .auth__forgot { display: block; width: fit-content; margin: -6px 0 14px; margin-inline-start: auto; font-size: 13px; }
 .auth__account { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid var(--gold-soft); border-radius: 12px; }
 .auth__account strong { font-size: 16px; }

@@ -295,25 +295,26 @@
     <div data-auth-only="in up">
       <div class="auth__gsi" id="gsi-btn" hidden></div>
       <button type="button" class="auth__google" data-action="auth-google"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>المتابعة باستخدام Google</span></button>
+      <button type="button" class="auth__submit auth__submit--ghost auth__mail-btn" data-action="auth-mail"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3.5 6.5 12 13l8.5-6.5"/></svg><span data-bind="auth-mail-cta">الدخول بالبريد الإلكتروني</span></button>
       <div class="auth__or">أو بالبريد الإلكتروني</div>
     </div>
-    <div data-auth-only="up" hidden>
+    <div class="auth__mail" data-auth-only="up" hidden>
       <label for="auth-name">الاسم</label>
       <input id="auth-name" aria-required="true" type="text" placeholder="الاسم" autocomplete="name">
     </div>
-    <div data-auth-only="in up forgot">
+    <div class="auth__mail" data-auth-only="in up forgot">
       <label for="auth-email">البريد الإلكتروني</label>
       <input id="auth-email" aria-required="true" type="email" placeholder="name@example.com" dir="ltr" autocomplete="email">
     </div>
-    <div data-auth-only="in up reset">
+    <div class="auth__mail" data-auth-only="in up reset">
       <label for="auth-pass">كلمة المرور</label>
       <div class="auth__pass">
         <input id="auth-pass" aria-required="true" type="password" placeholder="••••••••" dir="ltr" autocomplete="current-password">
         <button type="button" class="auth__eye" data-action="toggle-pass" aria-label="إظهار كلمة المرور" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
       </div>
     </div>
-    <a href="#" class="auth__forgot" data-auth-only="in" data-action="auth-forgot">نسيت كلمة المرور؟</a>
-    <div data-auth-only="up reset" hidden>
+    <a href="#" class="auth__forgot auth__mail" data-auth-only="in" data-action="auth-forgot">نسيت كلمة المرور؟</a>
+    <div class="auth__mail" data-auth-only="up reset" hidden>
       <label for="auth-pass2">إعادة كلمة المرور</label>
       <div class="auth__pass">
         <input id="auth-pass2" aria-required="true" type="password" placeholder="••••••••" dir="ltr" autocomplete="new-password">
@@ -325,7 +326,7 @@
       <span dir="ltr" data-bind="auth-email"></span>
     </div>
     <p class="auth__msg" id="auth-msg" role="status" hidden></p>
-    <button type="submit" class="auth__submit" data-bind="auth-cta" data-auth-only="in up forgot reset">دخول</button>
+    <button type="submit" class="auth__submit auth__mail" data-bind="auth-cta" data-auth-only="in up forgot reset">دخول</button>
     <div data-auth-only="account" hidden><a class="auth__submit auth__admin" href="admin.html" data-bind="admin-link" hidden>الإحصاءات والمشتركون</a></div>
     <button type="button" class="auth__submit auth__submit--ghost" data-action="sign-out" data-auth-only="account" hidden>تسجيل الخروج</button>
     <div class="auth__foot" data-auth-only="in">مستخدم جديد؟ <a href="#" data-action="auth-swap">اشترك</a></div>
