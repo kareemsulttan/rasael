@@ -7,7 +7,7 @@
 grant usage on schema public to anon, authenticated;
 
 -- 1) المشتركون ---------------------------------------------------------------
--- صف لكل مستخدم يُنشأ تلقائيًا عند الاشتراك من بيانات النموذج (الاسم والدولة).
+-- صف لكل مستخدم يُنشأ تلقائيًا عند الاشتراك من بيانات النموذج (الاسم والدولة)، أو من حساب Google (الاسم فقط).
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   full_name text not null default '',
@@ -17,12 +17,17 @@ create table if not exists public.profiles (
 );
 alter table public.profiles enable row level security;
 
--- المستخدم يقرأ صفه فقط، ولا يعدّل شيئًا (فلا يستطيع منح نفسه صلاحية المشرف)
+-- المستخدم يقرأ صفه فقط، ولا يعدّل منه إلا دولته (فلا يستطيع منح نفسه صلاحية المشرف).
+-- تعديل الدولة لمن دخل بحساب Google: جوجل لا يعطينا الدولة، فنسأله عنها بعد أول دخول.
 drop policy if exists "profiles: read own" on public.profiles;
 create policy "profiles: read own" on public.profiles
   for select to authenticated using (id = (select auth.uid()));
+drop policy if exists "profiles: update own country" on public.profiles;
+create policy "profiles: update own country" on public.profiles
+  for update to authenticated using (id = (select auth.uid())) with check (id = (select auth.uid()));
 revoke all on public.profiles from anon, authenticated;
 grant select on public.profiles to authenticated;
+grant update (country) on public.profiles to authenticated;
 
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = '' as $$
@@ -31,7 +36,7 @@ begin
   insert into public.profiles (id, full_name, country)
   values (
     new.id,
-    left(coalesce(meta ->> 'full_name', ''), 100),
+    left(coalesce(meta ->> 'full_name', meta ->> 'name', ''), 100),   -- من النموذج، أو من حساب Google
     case when meta ->> 'country' ~ '^[A-Za-z]{2}$' then upper(meta ->> 'country') end
   )
   on conflict (id) do nothing;
@@ -45,7 +50,7 @@ create trigger on_auth_user_created
 -- من اشترك قبل تشغيل هذا الملف
 insert into public.profiles (id, full_name, country)
 select id,
-       left(coalesce(raw_user_meta_data ->> 'full_name', ''), 100),
+       left(coalesce(raw_user_meta_data ->> 'full_name', raw_user_meta_data ->> 'name', ''), 100),
        case when raw_user_meta_data ->> 'country' ~ '^[A-Za-z]{2}$' then upper(raw_user_meta_data ->> 'country') end
 from auth.users
 on conflict (id) do nothing;

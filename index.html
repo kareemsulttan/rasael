@@ -288,13 +288,19 @@
         <button type="button" class="auth__tab" data-auth-tab="in" role="tab" aria-selected="true">الدخول</button>
         <button type="button" class="auth__tab" data-auth-tab="up" role="tab" aria-selected="false">مستخدم جديد</button>
       </div>
-      <h3 class="auth__title" data-bind="auth-title" data-auth-only="forgot reset account" hidden></h3>
+      <h3 class="auth__title" data-bind="auth-title" data-auth-only="forgot reset account country" hidden></h3>
       <button type="button" class="auth__close" data-action="close-auth" aria-label="إغلاق"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <p class="auth__lead" data-bind="auth-lead" hidden></p>
+    <div data-auth-only="in up">
+      <button type="button" class="auth__google" data-action="auth-google"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span>المتابعة باستخدام Google</span></button>
+      <div class="auth__or">أو بالبريد الإلكتروني</div>
+    </div>
     <div data-auth-only="up" hidden>
       <label for="auth-name">الاسم</label>
       <input id="auth-name" aria-required="true" type="text" placeholder="الاسم" autocomplete="name">
+    </div>
+    <div data-auth-only="up country" hidden>
       <label for="auth-country">الدولة</label>
       <div class="cpick" id="cpick">
         <button type="button" id="auth-country" class="cpick__btn" value="" aria-required="true" aria-haspopup="listbox" aria-expanded="false">
@@ -331,10 +337,11 @@
       <span dir="ltr" data-bind="auth-email"></span>
     </div>
     <p class="auth__msg" id="auth-msg" role="status" hidden></p>
-    <button type="submit" class="auth__submit" data-bind="auth-cta" data-auth-only="in up forgot reset">دخول</button>
+    <button type="submit" class="auth__submit" data-bind="auth-cta" data-auth-only="in up forgot reset country">دخول</button>
     <div data-auth-only="account" hidden><a class="auth__submit auth__admin" href="admin.html" data-bind="admin-link" hidden>الإحصاءات والمشتركون</a></div>
     <button type="button" class="auth__submit auth__submit--ghost" data-action="sign-out" data-auth-only="account" hidden>تسجيل الخروج</button>
     <div class="auth__foot" data-auth-only="in">مستخدم جديد؟ <a href="#" data-action="auth-swap">اشترك</a></div>
+    <div class="auth__foot" data-auth-only="up country" hidden>نحفظ اسمك ودولتك وبريدك فقط. <a href="privacy.html" target="_blank" rel="noopener">سياسة الخصوصية</a></div>
     <div class="auth__foot" data-auth-only="forgot" hidden><a href="#" data-action="auth-in">العودة إلى الدخول</a></div>
   </form>
 </div>

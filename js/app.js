@@ -457,13 +457,13 @@ $('#feedback-form').addEventListener('submit', async e => {
 });
 
 /* ---------- الحسابات (Supabase عبر auth.js) ---------- */
-const AUTH_CTA = { in: 'دخول', up: 'إنشاء حساب', forgot: 'إرسال رابط الاستعادة', reset: 'حفظ كلمة المرور' };
-const AUTH_TITLE = { forgot: 'استعادة كلمة المرور', reset: 'كلمة مرور جديدة', account: 'حسابي' };
+const AUTH_CTA = { in: 'دخول', up: 'إنشاء حساب', forgot: 'إرسال رابط الاستعادة', reset: 'حفظ كلمة المرور', country: 'حفظ' };
+const AUTH_TITLE = { forgot: 'استعادة كلمة المرور', reset: 'كلمة مرور جديدة', account: 'حسابي', country: 'أكمل اشتراكك' };
 let authMode = 'in', authLead = '';
 function setAuthMode(mode, msg = '', ok = false) {
   authMode = mode;
   // سطر تمهيدي حين تُفتح النافذة من ميزة للمشتركين (مثل المفضلة)
-  bind('auth-lead', n => { n.textContent = authLead; n.hidden = !authLead || !['in', 'up'].includes(mode); });
+  bind('auth-lead', n => { n.textContent = authLead; n.hidden = !authLead || !['in', 'up', 'country'].includes(mode); });
   $$('[data-auth-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.authTab === mode));
   $$('[data-auth-only]').forEach(n => n.hidden = !n.dataset.authOnly.split(' ').includes(mode));
   $('#auth-pass').autocomplete = mode === 'in' ? 'current-password' : 'new-password';
@@ -560,8 +560,8 @@ $('#auth-form').addEventListener('input', e => e.target.removeAttribute('aria-in
 function authInvalid() {
   const email = $('#auth-email'), pass = $('#auth-pass').value, isNew = authMode === 'up' || authMode === 'reset';
   if (authMode === 'up' && !$('#auth-name').value.trim()) return ['اكتب اسمك.', 'auth-name'];
-  if (authMode === 'up' && !$('#auth-country').value) return ['اختر دولتك.', 'auth-country'];
-  if (authMode !== 'reset' && (!email.value.trim() || !email.validity.valid)) return ['اكتب بريدًا إلكترونيًا صحيحًا.', 'auth-email'];
+  if ((authMode === 'up' || authMode === 'country') && !$('#auth-country').value) return ['اختر دولتك.', 'auth-country'];
+  if (['in', 'up', 'forgot'].includes(authMode) && (!email.value.trim() || !email.validity.valid)) return ['اكتب بريدًا إلكترونيًا صحيحًا.', 'auth-email'];
   if (authMode === 'in' && !pass) return ['اكتب كلمة المرور.', 'auth-pass'];
   if (isNew && pass.length < 8) return ['كلمة المرور 8 أحرف على الأقل.', 'auth-pass'];
   if (isNew && pass !== $('#auth-pass2').value) return ['كلمتا المرور غير متطابقتين.', 'auth-pass2'];
@@ -576,6 +576,7 @@ const AUTH_SUBMIT = {
   },
   forgot: async f => { await auth.sendReset(f.email); authMsg('إن كان البريد مسجّلًا فسيصلك رابط لتعيين كلمة مرور جديدة.', true); },
   reset: async f => { await auth.setPassword(f.pass); setAuthMode('account', 'حُفظت كلمة المرور الجديدة.', true); },
+  country: async f => { await auth.setCountry(state.user.id, f.country); $('#auth').hidden = true; },
 };
 $('#auth-form').addEventListener('submit', async e => {
   e.preventDefault();
@@ -589,6 +590,11 @@ $('#auth-form').addEventListener('submit', async e => {
   catch (err) { authMsg(auth.errorText(err)); }
   finally { btn.disabled = false; }
 });
+async function googleSignIn(btn) {
+  btn.disabled = true; authMsg('');
+  try { await auth.signInWithGoogle(); }   // ينتقل المتصفح إلى صفحة Google
+  catch (err) { authMsg(auth.errorText(err)); btn.disabled = false; }
+}
 async function signOut() {
   try { await auth.signOut(); $('#auth').hidden = true; } catch (err) { authMsg(auth.errorText(err)); }
 }
@@ -599,7 +605,11 @@ auth.onUser(user => {
   else if (profileFor !== user.id) {
     // صلاحية المشرف من جدول profiles، مرة لكل مستخدم
     profileFor = user.id;
-    auth.myProfile().then(p => { state.admin = !!p?.is_admin; renderBindings(); }).catch(() => {});
+    auth.myProfile().then(p => {
+      state.admin = !!p?.is_admin; renderBindings();
+      // من دخل بحساب Google لم تصلنا دولته: نسأله عنها (وتُسأل مرة أخرى في الزيارة التالية إن أغلق النافذة)
+      if (p && !p.country && $('#auth').hidden) openAuth('country', '', false, 'اختر دولتك لإكمال اشتراكك.');
+    }).catch(() => {});
   }
   renderBindings();
   syncFavs();
@@ -628,7 +638,7 @@ const actions = {
   'auth-swap': () => setAuthMode(authMode === 'in' ? 'up' : 'in'),
   'auth-forgot': () => setAuthMode('forgot'), 'auth-in': () => setAuthMode('in'),
   'toggle-pass': () => showPasswords($('#auth-pass').type === 'password'),
-  'sign-out': signOut,
+  'sign-out': signOut, 'auth-google': googleSignIn,
   'hide-hint': hideHint,
 };
 
@@ -722,7 +732,7 @@ renderCountries();
 track('visit');
 auth.init().then(() => {
   const cb = auth.callback; if (!cb || !auth.authEnabled) return;
-  if (cb.error) openAuth('in', auth.errorText({ code: cb.error }));
+  if (cb.error) openAuth('in', cb.oauth ? 'لم يكتمل الدخول بحساب Google، حاول مرة أخرى.' : auth.errorText({ code: cb.error }));
   else if (cb.type === 'recovery') openAuth('reset');
-  else openAuth('account', 'تم تأكيد بريدك، أهلًا بك.', true);
+  else if (!cb.oauth) openAuth('account', 'تم تأكيد بريدك، أهلًا بك.', true);
 }).catch(err => { if (auth.callback) openAuth('in', auth.errorText(err)); });

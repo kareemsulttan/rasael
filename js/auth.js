@@ -4,18 +4,21 @@ import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 
 const LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/+esm';
 const STORAGE_KEY = 'om-auth';
+const RETURN_KEY = 'om-return';   // موضع الزائر في الصفحة قبل ذهابه إلى Google، ليعود إليه
 const SITE_URL = location.origin + location.pathname;
 export const authEnabled = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
-// روابط البريد (تأكيد الحساب / استعادة كلمة المرور) تعود والجلسة في الرابط.
-// نلتقطها هنا قبل أن يقرأ app.js الرابط، ثم ننظّف الرابط.
+// روابط البريد (تأكيد الحساب / استعادة كلمة المرور) والعودة من Google تأتي والجلسة في الرابط.
+// نلتقطها هنا قبل أن يقرأ app.js الرابط، ثم ننظّف الرابط (ونعيد موضع الزائر إن كان عائدًا من Google).
 export const callback = readCallback();
 function readCallback() {
   const h = new URLSearchParams(location.hash.slice(1)), q = new URLSearchParams(location.search);
   const p = h.has('access_token') || h.has('error_description') ? h : q.has('error_description') ? q : null;
   if (!p) return null;
-  history.replaceState(null, '', location.pathname);
-  return { type: p.get('type'), access: p.get('access_token'), refresh: p.get('refresh_token'), error: p.get('error_code') || p.get('error') };
+  let back = null;
+  try { back = sessionStorage.getItem(RETURN_KEY); sessionStorage.removeItem(RETURN_KEY); } catch {}
+  history.replaceState(null, '', location.pathname + (back?.startsWith('#') ? back : ''));
+  return { type: p.get('type'), oauth: back !== null, access: p.get('access_token'), refresh: p.get('refresh_token'), error: p.get('error_code') || p.get('error') };
 }
 
 const listeners = [];
@@ -67,6 +70,13 @@ export async function signUp({ name, country, email, pass }) {
   if (data.user && !data.session && data.user.identities?.length === 0) throw { code: 'user_already_exists' };
   return data;
 }
+// الدخول بحساب Google: ينتقل المتصفح إلى جوجل ثم يعود إلى الصفحة نفسها والجلسة في الرابط
+export async function signInWithGoogle() {
+  try { sessionStorage.setItem(RETURN_KEY, location.hash); } catch {}
+  return call(a => a.signInWithOAuth({ provider: 'google', options: { redirectTo: SITE_URL, queryParams: { prompt: 'select_account' } } }));
+}
+// الدولة لمن دخل بـ Google (الصلاحية في قاعدة البيانات: الدولة فقط، ولصاحب الحساب فقط)
+export const setCountry = (id, country) => db(c => c.from('profiles').update({ country }).eq('id', id));
 export const signOut = () => call(a => a.signOut({ scope: 'local' }));
 export const sendReset = email => call(a => a.resetPasswordForEmail(email, { redirectTo: SITE_URL }));
 export const setPassword = password => call(a => a.updateUser({ password }));

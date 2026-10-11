@@ -523,7 +523,9 @@ button { cursor: pointer; }
   display: flex; align-items: center; justify-content: center; animation: fade-in .2s ease;
 }
 .overlay--dim { background: rgba(29, 37, 49, .85); backdrop-filter: none; cursor: pointer; z-index: 60; }
-.overlay--auth { background: rgba(29, 37, 49, .72); backdrop-filter: none; z-index: 80; }
+.overlay--auth { background: rgba(29, 37, 49, .72); backdrop-filter: none; z-index: 80; overflow-y: auto; align-items: flex-start; }
+/* تتوسّط النافذة إن اتسعت لها الشاشة، وإلا تُمرَّر (الشاشات القصيرة) */
+.overlay--auth > .auth { margin: auto 0; }
 .overlay--share { background: rgba(29, 37, 49, .55); backdrop-filter: blur(3px); z-index: 40; padding: 16px; }
 
 .modal {
@@ -672,6 +674,19 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 /* سطر تمهيدي حين تُفتح النافذة من ميزة للمشتركين (المفضلة) */
 .auth__lead { margin: -8px 0 18px; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.8; background: var(--gold-faint); color: var(--gold-ink); }
 .auth--dark .auth__lead { background: rgba(185, 157, 89, .14); color: #d9c189; }
+/* زر Google بألوانه المعتمدة في الوضعين، وتحته فاصل «أو بالبريد الإلكتروني» */
+.auth__google {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 11px 12px; border-radius: 999px; font-size: 15px; font-weight: 600;
+  background: #fff; color: #1f1f1f; border: 1px solid #747775; transition: background .18s;
+}
+.auth__google:hover { background: #f2f2f2; }
+.auth__google:disabled { opacity: .6; cursor: wait; }
+.auth--dark .auth__google { background: #131314; color: #e3e3e3; border-color: #8e918f; }
+.auth--dark .auth__google:hover { background: #232325; }
+.auth__or { display: flex; align-items: center; gap: 12px; margin: 16px 0; font-size: 13px; color: #6b7280; }
+.auth__or::before, .auth__or::after { content: ""; flex: 1; height: 1px; background: var(--gold-soft); }
+.auth--dark .auth__or { color: var(--muted-5); }
 .auth__forgot { display: block; width: fit-content; margin: -6px 0 14px; margin-inline-start: auto; font-size: 13px; }
 .auth__account { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid var(--gold-soft); border-radius: 12px; }
 .auth__account strong { font-size: 16px; }

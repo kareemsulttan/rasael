@@ -7,6 +7,7 @@
 ```
 index.html          بنية الصفحة فقط
 admin.html          صفحة الإحصاءات والمشتركين (للمشرفين)
+privacy.html        سياسة الخصوصية (رابطها في نافذة الاشتراك وفي شاشة موافقة Google)
 css/fonts.css       تعريفات الخطوط المحلية
 css/main.css        التنسيقات والتجاوب والوضع الداكن
 css/admin.css       تنسيقات صفحة الإحصاءات
@@ -54,6 +55,13 @@ server.js           خادم Node بسيط للنشر على Railway
    مُرسل Supabase المدمج لا يرسل إلا لأعضاء فريق المشروع وبعدد محدود، فلا يصلح للزوار.
 6. اختياري: عرّب قوالب رسائل التأكيد واستعادة كلمة المرور من **Authentication ← Emails**،
    واجعل الحد الأدنى لطول كلمة المرور 8 ليطابق الموقع.
+7. **الدخول بحساب Google**:
+   - في [Google Cloud Console](https://console.cloud.google.com) ← **Google Auth Platform**: جمهور External، وفي Branding
+     رابط الموقع ورابط `privacy.html`، والنطاقان المعتمدان `byenah.com` و`<المشروع>.supabase.co`، ثم **Publish app**.
+   - **Clients ← Create client** (Web application): الأصل `https://rasael.byenah.com`، ورابط العودة
+     `https://<المشروع>.supabase.co/auth/v1/callback`.
+   - في Supabase ← **Authentication ← Sign In / Providers ← Google**: فعّله والصق Client ID وClient secret.
+   - جوجل لا يعطي الدولة، فيسأل الموقع من دخل بجوجل عن دولته بعد أول دخول.
 
 ### المشرفون
 
