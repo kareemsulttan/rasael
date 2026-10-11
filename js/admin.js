@@ -28,11 +28,10 @@ const LABELS = {
   device: k => ({ mobile: 'جوال', desktop: 'حاسوب' })[k] || k,
   channel: k => ({ wa: 'واتساب', tw: 'إكس', tg: 'تيليجرام', fb: 'فيسبوك', copy: 'نسخ النص', download: 'تحميل البطاقة' })[k] || k,
   lang: k => LANGS.find(l => l[1] === k)?.[0] || k,
-  countries: countryName,
 };
 
 /* ---------- الحالة ---------- */
-let days = 30, stats = null, users = [], feedback = [], relTab = RELIGIONS[0].key;
+let days = 30, stats = null, users = [], feedback = [], relTab = RELIGIONS[0].key, countryTab = 'visitors';
 try { if (localStorage.getItem('om-pref-dark') === '1') document.body.dataset.theme = 'dark'; } catch {}
 
 function gate(text, linkText) {
@@ -167,6 +166,24 @@ function renderBars(id, obj, label) {
   })));
 }
 
+/* ---------- الدول: تبويبان، الزوار (حسب المدة) والمشتركون (كل المدة) ---------- */
+const COUNTRY_TABS = {
+  visitors: ['الزوار', 'visitor_countries', 'الزوار حسب دولة اتصالهم في المدة المختارة، منذ بدء تسجيل الدولة'],
+  users: ['المشتركون', 'countries', 'كل المشتركين، بلا تقييد بالمدة'],
+};
+const countriesCount = n => n === 1 ? 'دولة واحدة' : n === 2 ? 'دولتان' : n <= 10 ? `${n} دول` : `${fmt(n)} دولة`;
+function renderCountries() {
+  $('#adm-country-tabs').replaceChildren(...Object.entries(COUNTRY_TABS).map(([k, [name]]) =>
+    h('button', { class: 'adm-tab', role: 'tab', 'aria-selected': k === countryTab, 'data-ctab': k }, name)));
+  const [, key, sub] = COUNTRY_TABS[countryTab], n = Object.keys(stats[key] || {}).filter(c => c !== '—').length;
+  $('#adm-countries-sub').textContent = n ? `${countriesCount(n)} · ${sub}` : sub;
+  renderBars('adm-countries', stats[key], countryName);
+}
+$('#adm-country-tabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-ctab]'); if (!b) return;
+  countryTab = b.dataset.ctab; renderCountries();
+});
+
 /* ---------- الرسائل ---------- */
 function renderMessages() {
   $('#adm-rel-tabs').replaceChildren(...RELIGIONS.map(r =>
@@ -259,7 +276,8 @@ $('#adm-fb-csv').addEventListener('click', () => exportCsv('الملاحظات',
 /* ---------- التحميل ---------- */
 function renderStats() {
   renderKpis(); renderDaily(); renderMessages();
-  for (const k of ['rel', 'size', 'channel', 'device', 'lang', 'countries']) renderBars('adm-' + k, stats[k], LABELS[k]);
+  for (const k of ['rel', 'size', 'channel', 'device', 'lang']) renderBars('adm-' + k, stats[k], LABELS[k]);
+  renderCountries();
 }
 function fail(e) {
   if (e?.code === '42501') gate('هذا الحساب ليس مشرفًا. اطلب من مسؤول الموقع منحك الصلاحية.', 'العودة إلى الموقع');

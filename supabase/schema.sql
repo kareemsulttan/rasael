@@ -85,8 +85,10 @@ create table if not exists public.events (
   size text check (size in ('S', 'M', 'L')),
   channel text check (channel in ('wa', 'tw', 'tg', 'fb')),
   lang text check (char_length(lang) <= 5),
-  device text check (device in ('mobile', 'desktop'))
+  device text check (device in ('mobile', 'desktop')),
+  country text check (country ~ '^[A-Z]{2}$')        -- دولة الاتصال، يملؤها events_set_country
 );
+alter table public.events add column if not exists country text check (country ~ '^[A-Z]{2}$');   -- لقواعد أُنشئت قبل إضافة الدولة
 create index if not exists events_created_at_idx on public.events (created_at);
 create index if not exists events_user_id_idx on public.events (user_id);
 alter table public.events enable row level security;
@@ -97,6 +99,17 @@ create policy "events: anyone can log" on public.events
   for insert to anon, authenticated with check (user_id is null or user_id = (select auth.uid()));
 revoke all on public.events from anon, authenticated;
 grant insert on public.events to anon, authenticated;
+
+-- دولة كل زيارة من اتصالها (request_country أعلاه)، تُكتب في قاعدة البيانات لا في المتصفح فلا تُزوَّر
+create or replace function public.events_set_country() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  new.country := public.request_country();
+  return new;
+end $$;
+drop trigger if exists events_set_country on public.events;
+create trigger events_set_country before insert on public.events
+  for each row execute function public.events_set_country();
 
 
 -- 3) الملاحظات ----------------------------------------------------------------
@@ -177,6 +190,7 @@ begin
       'device',    (select coalesce(jsonb_object_agg(k, n), '{}') from (select device k, count(distinct visitor_id) n from ev where type = 'visit' and device is not null group by 1) x),
       'channel',   (select coalesce(jsonb_object_agg(k, n), '{}') from (select coalesce(channel, type) k, count(*) n from ev where type in ('share', 'copy', 'download') group by 1) x),
       'countries', (select coalesce(jsonb_object_agg(k, n), '{}') from (select coalesce(country, '—') k, count(*) n from public.profiles group by 1) x),
+      'visitor_countries', (select coalesce(jsonb_object_agg(k, n), '{}') from (select country k, count(distinct visitor_id) n from ev where country is not null group by 1) x),
       'messages',  (select coalesce(jsonb_agg(m order by m.rel, m.msg), '[]') from (
         select rel, msg,
                (array_agg(title order by created_at desc) filter (where title is not null))[1] as title,
@@ -227,7 +241,7 @@ begin
   delete from public.feedback where id = feedback_id;
 end $$;
 
-revoke all on function public.handle_new_user(), public.request_country() from public, anon, authenticated;
+revoke all on function public.handle_new_user(), public.request_country(), public.events_set_country() from public, anon, authenticated;
 revoke all on function public.claim_country() from public, anon;
 grant execute on function public.claim_country() to authenticated;
 revoke all on function public.is_admin(), public.admin_stats(int), public.admin_users(),
