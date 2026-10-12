@@ -1,15 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- فقاعتا حوار مملوءتان داخل مربع كحلي: واضحة على أشرطة التبويبات الفاتحة والداكنة -->
-  <rect width="64" height="64" rx="14" fill="#1d2531"/>
-  <g transform="translate(6.5 4) scale(0.82)">
+  <!-- فقاعتا حوار مملوءتان: الخلفية كحلية والأمامية ذهبية، بينهما فراغ صغير -->
+  <g transform="translate(0.5 -1.5)">
     <defs>
-      <!-- فراغ حول الفقاعة الأمامية يفصلها عن الخلفية -->
       <mask id="cut">
-        <rect width="64" height="64" fill="#fff"/>
-        <path d="M27.85 44.1Q28.2 52 24 58.5Q31 56.5 37.2 46.2A22.7 16.2 0 1 0 27.85 44.1Z" fill="#000" stroke="#000" stroke-width="9" stroke-linejoin="round"/>
+        <rect x="-5" y="-5" width="74" height="74" fill="#fff"/>
+        <path d="M27.85 44.1Q28.2 52 24 58.5Q31 56.5 37.2 46.2A22.7 16.2 0 1 0 27.85 44.1Z" fill="#000" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
       </mask>
     </defs>
-    <path fill="#e9e1cf" mask="url(#cut)" d="M12.6 38.7Q13 47 9.5 54Q16 51.5 21.4 40.8A21.2 16.2 0 1 0 12.6 38.7Z"/>
+    <path fill="#1d2531" mask="url(#cut)" d="M12.6 38.7Q13 47 9.5 54Q16 51.5 21.4 40.8A21.2 16.2 0 1 0 12.6 38.7Z"/>
     <path fill="#b99d59" d="M27.85 44.1Q28.2 52 24 58.5Q31 56.5 37.2 46.2A22.7 16.2 0 1 0 27.85 44.1Z"/>
   </g>
 </svg>
