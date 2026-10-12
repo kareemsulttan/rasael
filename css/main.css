@@ -489,15 +489,16 @@ button { cursor: pointer; }
 .drawer--intro .drawer__close { border-color: rgba(185, 157, 89, .4); }
 .drawer--intro .drawer__close svg { stroke: #d9c189; }
 .drawer__item {
-  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  width: 100%; display: flex; justify-content: flex-start; align-items: center; gap: 12px;
   border: none; background: transparent; color: var(--ink); text-decoration: none; text-align: right;
   padding: 13px 0; font-size: 16px; border-bottom: 1px solid var(--line-5);
 }
 .drawer--intro .drawer__item { color: var(--chrome); border-bottom-color: rgba(185, 157, 89, .18); }
 .drawer__item .sub { color: var(--muted-4); font-size: 13px; }
-.drawer__item .glyph { font-size: 16px; color: var(--gold); }
-.drawer__item .chev { width: 7px; height: 7px; margin-inline-end: 4px; }
-.drawer__item[data-bind="auth-label"] { justify-content: flex-start; gap: 12px; }
+/* أيقونة كل عنصر في أوله، بأيقونات الشريط العلوي نفسها؛ والسهم في آخره */
+.drawer__ic { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--gold-ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.drawer--intro .drawer__ic { stroke: #d9c189; }
+.drawer__item .chev { width: 7px; height: 7px; margin-inline-start: auto; margin-inline-end: 4px; }
 .drawer__who { display: flex; flex-direction: column; line-height: 1.4; min-width: 0; }
 .drawer__who > span:first-child { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .avatar {

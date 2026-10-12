@@ -52,8 +52,12 @@ const el = {
 
 /* ---------- العرض ---------- */
 function bind(name, fn) { $$(`[data-bind="${name}"]`).forEach(fn); }
-const ICON_MOON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
-const ICON_SUN = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON = '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>';
+const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+const icon15 = paths => `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const ICON_MOON = icon15(MOON), ICON_SUN = icon15(SUN);
+// أيقونة الحساب في القائمة الجانبية (للزائر؛ المسجّل يظهر له أول حرف من اسمه)
+const DRAWER_USER = '<svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 
 function renderBindings() {
   bind('rel-name', n => n.textContent = RELIGIONS[state.rel].name);
@@ -61,8 +65,8 @@ function renderBindings() {
   bind('lang-code', n => n.textContent = LANGS[state.lang][1]);
   bind('theme-btn', n => { n.innerHTML = state.dark ? ICON_SUN : ICON_MOON; n.dataset.tip = n.title = state.dark ? 'الوضع الفاتح' : 'الوضع الداكن'; });
   bind('theme-label', n => n.textContent = state.dark ? 'الوضع الفاتح' : 'الوضع الداكن');
-  bind('theme-icon', n => n.textContent = state.dark ? '☀' : '☾');
-  bind('intro-theme-icon', n => n.textContent = state.introDark ? '☀' : '☾');
+  bind('theme-icon', n => n.innerHTML = state.dark ? SUN : MOON);
+  bind('intro-theme-icon', n => n.innerHTML = state.introDark ? SUN : MOON);
   bind('intro-theme-label', n => n.textContent = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن');
   bind('intro-theme-btn', n => { n.dataset.tip = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن'; n.setAttribute('aria-label', n.dataset.tip); });
   bind('card-title', n => n.textContent = current().title);
@@ -72,7 +76,7 @@ function renderBindings() {
   const avatar = cls => Object.assign(document.createElement('span'), { className: cls, textContent: initial });
   // في القائمة: دائرة الحرف الأول والاسم، وتحته «حسابي»
   bind('auth-label', n => {
-    if (!state.user) return n.textContent = authLabel;
+    if (!state.user) return n.innerHTML = `${DRAWER_USER}<span>${authLabel}</span>`;
     const text = Object.assign(document.createElement('span'), { className: 'drawer__who' });
     text.append(Object.assign(document.createElement('span'), { textContent: userName || state.user.email }),
       Object.assign(document.createElement('span'), { className: 'sub', textContent: authLabel }));
