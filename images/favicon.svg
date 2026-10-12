@@ -1,12 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- فقاعة حوار بألوان الموقع: كحلي وخطوط ذهبية، وتنعكس في التبويبات الداكنة -->
+  <!-- فقاعتا حوار بخطوط: الخلفية كحلية (كريمية في التبويبات الداكنة) والأمامية ذهبية -->
   <style>
-    .b { fill: #1d2531; } .l { stroke: #b99d59; }
-    @media (prefers-color-scheme: dark) { .b { fill: #b99d59; } .l { stroke: #1d2531; } }
+    .back { stroke: #1d2531; }
+    @media (prefers-color-scheme: dark) { .back { stroke: #e9e1cf; } }
   </style>
-  <g class="b">
-    <ellipse cx="33" cy="28" rx="29" ry="24"/>
-    <path d="M12 40 4 60 26 48z"/>
+  <defs>
+    <!-- فراغ حول الفقاعة الأمامية يقطع خط الخلفية حيث تمر فوقها -->
+    <mask id="cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M27.85 44.1Q28.2 52 24 58.5Q31 56.5 37.2 46.2A22.7 16.2 0 1 0 27.85 44.1Z" fill="#000" stroke="#000" stroke-width="10.2" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g fill="none" stroke-width="3.4" stroke-linejoin="round">
+    <path class="back" mask="url(#cut)" d="M12.6 38.7Q13 47 9.5 54Q16 51.5 21.4 40.8A21.2 16.2 0 1 0 12.6 38.7Z"/>
+    <path stroke="#b99d59" d="M27.85 44.1Q28.2 52 24 58.5Q31 56.5 37.2 46.2A22.7 16.2 0 1 0 27.85 44.1Z"/>
   </g>
-  <path class="l" d="M19 19h27M19 28h27M19 37h16" fill="none" stroke-width="5" stroke-linecap="round"/>
 </svg>
