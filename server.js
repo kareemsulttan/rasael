@@ -4,6 +4,7 @@ const root = __dirname;
 http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/' || p === '') p = '/index.html';
+  if (p === '/favicon.ico') p = '/images/favicon-32.png';   // بعض المتصفحات تطلبه مباشرة
   const file = path.join(root, path.normalize(p));
   if (!file.startsWith(root)) { res.writeHead(403); return res.end(); }
   fs.readFile(file, (err, data) => {
