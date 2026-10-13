@@ -38,7 +38,8 @@
     </button>
     <a href="#guide" class="ibar__guide" data-action="guide">توجيهات عامة للداعية</a>
     <div class="ibar__right">
-      <div style="position:relative">
+      <!-- اللغة مخفية مؤقتًا حتى تجهز الترجمات (هنا وفي الشريط والقائمتين): احذف hidden لإظهارها -->
+      <div style="position:relative" hidden>
         <button class="pill" data-action="toggle-pop" data-pop="intro-lang" aria-haspopup="listbox">
           <span data-bind="lang-name"></span><span class="chev" style="width:7px;height:7px"></span>
         </button>
@@ -46,7 +47,7 @@
       </div>
       <button class="mode-btn tip tip--down" data-tip="المفضلة" data-action="favs" aria-label="المفضلة"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>
       <button class="mode-btn tip tip--down" data-tip="الدخول / الاشتراك" data-action="auth" data-bind="auth-btn" aria-label="الدخول / الاشتراك"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
-      <button class="mode-btn tip tip--down" data-tip="الوضع الفاتح" data-action="intro-theme" data-bind="intro-theme-btn" aria-label="الوضع الفاتح"><span data-bind="intro-theme-icon">☀</span></button>
+      <button class="mode-btn tip tip--down" data-tip="الوضع الفاتح" data-action="intro-theme" data-bind="intro-theme-btn" aria-label="الوضع الفاتح"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" data-bind="intro-theme-icon"></svg></button>
     </div>
   </div>
 
@@ -86,7 +87,7 @@
     <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
     <button class="drawer__item" data-action="favs"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg><span>المفضلة <span class="sub" data-bind="fav-sub"></span></span></button>
     <button class="drawer__item" data-action="intro-theme"><svg class="drawer__ic" data-bind="intro-theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg><span data-bind="intro-theme-label"></span></button>
-    <button class="drawer__item" data-action="toggle-sub" data-sub="intro-lang-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
+    <button class="drawer__item" data-action="toggle-sub" data-sub="intro-lang-sub" hidden><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
     <div class="drawer__sub drawer__sub--chips" id="intro-lang-sub" data-list="lang-chips" hidden></div>
   </aside>
 </section>
@@ -163,7 +164,7 @@
       <span class="tip tip--start" data-tip="اضغط لمشاركة الموقع عبر الـ QR" style="display:inline-flex;line-height:0"><img class="topnav__qr" src="images/qr-site.png" width="592" height="592" alt="رمز QR للموقع" data-action="site-qr"></span>
       <span class="topnav__sep"></span>
       <div class="topnav__tools topnav__tools--ltr">
-        <div style="position:relative">
+        <div style="position:relative" hidden>
           <button class="icon-btn icon-btn--wide tip" data-tip="اللغة" data-action="toggle-pop" data-pop="bar-lang" aria-haspopup="listbox" aria-label="اللغة" style="padding:0 10px 0 9px">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span class="lang-code" data-bind="lang-code"></span><span class="chev"></span>
           </button>
@@ -197,7 +198,7 @@
   <button class="drawer__item" data-action="theme"><svg class="drawer__ic" data-bind="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg><span data-bind="theme-label"></span></button>
   <button class="drawer__item" data-action="toggle-sub" data-sub="menu-rel-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15.5a5 5 0 0 1 5.5 4.5"/></svg><span>دين المدعو <span class="sub">· <span data-bind="rel-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub" id="menu-rel-sub" data-list="rel" hidden></div>
-  <button class="drawer__item" data-action="toggle-sub" data-sub="menu-lang-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
+  <button class="drawer__item" data-action="toggle-sub" data-sub="menu-lang-sub" hidden><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub drawer__sub--chips" id="menu-lang-sub" data-list="lang-chips" hidden></div>
 </aside>
 
