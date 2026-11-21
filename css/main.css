@@ -212,15 +212,15 @@ button { cursor: pointer; }
 .intro__desc { font-size: clamp(15px, 1.6vw, 16px); color: var(--muted-5); line-height: 1.8; margin: 0 0 clamp(36px, 8vh, 80px); max-width: 520px; }
 .intro__guide-m { display: none; margin-top: 26px; font-size: 15px; color: var(--gold); text-decoration: underline; text-underline-offset: 5px; }
 
-.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 960px; text-align: right; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; width: 100%; max-width: 1100px; text-align: right; }
 .step {
   position: relative; border: 1px solid var(--gold-soft); border-radius: 16px; padding: 22px 24px;
   display: flex; flex-direction: column; gap: 14px; background: rgba(255, 255, 255, .03);
   transition: border-color .3s, box-shadow .3s;
 }
-.step__label { display: flex; gap: 10px; align-items: center; color: var(--muted-2); font-size: 13px; }
+.step__label { display: flex; gap: 10px; align-items: center; color: var(--muted-5); font-size: 15px; font-weight: 700; }
 .step__num {
-  width: 24px; height: 24px; flex: none; border-radius: 50%; border: 1px solid var(--gold); color: var(--gold);
+  width: 26px; height: 26px; flex: none; font-size: 14px; border-radius: 50%; border: 1px solid var(--gold); color: var(--gold);
   display: flex; align-items: center; justify-content: center; font-weight: 700; transition: background .3s, color .3s;
 }
 .step--start {
@@ -242,6 +242,8 @@ button { cursor: pointer; }
 .select-btn .chev { width: 8px; height: 8px; }
 
 .size-group { display: flex; gap: 6px; flex-wrap: wrap; }
+/* اختيار الدين في صفحة البداية: أزرار ظاهرة بدل القائمة المنسدلة */
+.rel-group { display: flex; gap: 6px; flex-wrap: wrap; }
 .size-btn {
   border: 1px solid #3a4453; background: transparent; color: #c9c0ae;
   border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 700;
@@ -287,7 +289,7 @@ button { cursor: pointer; }
 .intro[data-theme="light"] .intro__title { color: var(--ink); }
 .intro[data-theme="light"] .intro__desc { color: #5a6170; }
 .intro[data-theme="light"] .step:not(.step--start) { background: var(--card); border-color: var(--line); }
-.intro[data-theme="light"] .step__label { color: #6b7280; }
+.intro[data-theme="light"] .step__label { color: #5a6170; }
 .intro[data-theme="light"] .select-btn { color: var(--ink); }
 .intro[data-theme="light"] .select-btn:hover { background: #ead9b3; }
 .intro[data-theme="light"] .size-btn { border-color: var(--line); color: var(--muted-3); }
@@ -784,6 +786,12 @@ body[data-theme="dark"] { background: var(--navy-deep); }
   .side--next { left: 10px; }
   .side--prev { right: 10px; }
   .card { max-width: min(720px, calc(100vw - 150px)); }
+}
+
+/* الجهاز اللوحي: الدين في صف كامل، والحجم وابدأ تحته بعرضين متساويين */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 760px; }
+  .steps > .step:first-child { grid-column: 1 / -1; }
 }
 
 @media (max-width: 991px) {

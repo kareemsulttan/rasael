@@ -110,6 +110,10 @@ function renderLists() {
   $$('[data-list="lang-chips"]').forEach(box => {
     box.innerHTML = LANGS.map((l, i) => `<button class="chip" data-pick-lang="${i}" aria-selected="${i === state.lang}">${l[0]}</button>`).join('');
   });
+  // صفحة البداية: الأديان أزرارًا ظاهرة بنفس شكل أزرار الحجم
+  $$('[data-list="rel-intro"]').forEach(box => {
+    box.innerHTML = RELIGIONS.map((r, i) => `<button class="size-btn" data-pick-rel="${i}" aria-pressed="${i === state.rel}">${r.name}</button>`).join('');
+  });
   $$('[data-list="size-intro"]').forEach(box => {
     box.innerHTML = SIZES.map(s => `<button class="size-btn" data-pick-size="${s.key}" data-scope="intro" aria-pressed="${s.key === state.defLen}">${s.label}</button>`).join('');
   });
