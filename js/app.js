@@ -4,6 +4,7 @@ import { qrDataUrl } from './qr.js';
 import { renderCard, segmentsFromHtml } from './card.js';
 import * as auth from './auth.js';
 import { track, insertRow } from './track.js';
+import { t, setDict, translateDom } from './i18n.js';
 
 /* ---------- أدوات صغيرة ---------- */
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -23,32 +24,43 @@ const state = {
   defLen: savedLen, len: savedLen,
   dark: store.get('om-pref-dark') === '1',
   introDark: store.get('om-pref-idark') !== '0',
-  lang: Math.max(0, LANGS.findIndex(l => l[1] === store.get('om-pref-lang'))), step: 1,
+  // ui: لغة الواجهة (زر اللغة الخارجي، تُحفظ للزائر)، lang: لغة الرسائل (تتبع الواجهة، ويغيّرها زر البطاقة)
+  ui: Math.max(0, LANGS.findIndex(l => l[1] === (store.get('om-pref-ui') || store.get('om-pref-lang')))),
+  lang: 0, step: 1,
   intro: true,
   user: null, admin: false,
 };
+state.lang = state.ui;
 const msgs = () => MESSAGES[RELIGIONS[state.rel].set];
 // الرسالة العربية: هي هوية الرسالة في المفضلة والإحصاءات والملاحظات مهما كانت لغة العرض
 const arCurrent = () => msgs()[state.cur];
 
-/* ---------- لغة الرسائل ---------- */
-// العربية هي الأصل؛ كل لغة أخرى في js/i18n/<code>.js وتُحمَّل عند اختيارها فقط.
-// الواجهة تبقى بالعربية، واللغة تغيّر نص الرسائل التي يرسلها الداعية. ما لم يُترجم يظهر بالعربية.
-const packs = {};
+/* ---------- اللغات ---------- */
+// العربية هي الأصل. لكل لغة أخرى ملفان في js/i18n/ يُحمَّلان عند الحاجة فقط:
+// <code>.js نص الرسائل (مولَّد من ملفات الترجمة)، و<code>-ui.js كلمات الواجهة وتوجيهات الداعية.
+// ما لم يُترجم يظهر بالعربية.
+const packs = {}, uiPacks = {};
 const langCode = (i = state.lang) => LANGS[i][1].toLowerCase();
 async function loadLang(i) {
   if (!i) return;
   const code = langCode(i);
   packs[code] ??= (await import(`./i18n/${code}.js`)).default;
 }
+async function loadUi(i) {
+  if (!i) return;
+  const code = langCode(i);
+  uiPacks[code] ??= (await import(`./i18n/${code}-ui.js`)).default;
+}
 const pack = () => (state.lang ? packs[langCode()] : null);
+const uiPack = () => (state.ui ? uiPacks[langCode(state.ui)] : null);
 const langDir = () => pack()?.dir || 'rtl';
+const isLtr = () => (uiPack()?.dir || 'rtl') === 'ltr';
 // الرسالة المعروضة: الترجمة إن وُجدت، وإلا العربية حقلًا بحقل
 const current = () => {
-  const a = arCurrent(), t = pack()?.messages?.[RELIGIONS[state.rel].set]?.[state.cur];
-  if (!t) return a;
+  const a = arCurrent(), tr = pack()?.messages?.[RELIGIONS[state.rel].set]?.[state.cur];
+  if (!tr) return a;
   const out = { ...a };
-  for (const k of ['title', 'short', 'medium', 'long']) if (t[k]) out[k] = t[k];
+  for (const k of ['title', 'short', 'medium', 'long']) if (tr[k]) out[k] = tr[k];
   return out;
 };
 const isTranslated = () => !!pack()?.messages?.[RELIGIONS[state.rel].set]?.[state.cur]?.[sizeField(state.len)];
@@ -89,17 +101,20 @@ const ICON_MOON = icon15(MOON), ICON_SUN = icon15(SUN);
 const DRAWER_USER = '<svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>';
 
 function renderBindings() {
-  bind('rel-name', n => n.textContent = RELIGIONS[state.rel].name);
-  bind('lang-name', n => n.textContent = LANGS[state.lang][0]);
-  bind('lang-code', n => n.textContent = LANGS[state.lang][1]);
-  bind('theme-btn', n => { n.innerHTML = state.dark ? ICON_SUN : ICON_MOON; n.dataset.tip = n.title = state.dark ? 'الوضع الفاتح' : 'الوضع الداكن'; });
-  bind('theme-label', n => n.textContent = state.dark ? 'الوضع الفاتح' : 'الوضع الداكن');
+  bind('rel-name', n => n.textContent = t(RELIGIONS[state.rel].name));
+  // زر اللغة الخارجي: لغة الواجهة. زر البطاقة: لغة الرسالة
+  bind('lang-name', n => n.textContent = LANGS[state.ui][0]);
+  bind('lang-code', n => n.textContent = LANGS[state.ui][1]);
+  bind('msg-lang-code', n => n.textContent = LANGS[state.lang][1]);
+  const themeText = dark => t(dark ? 'الوضع الفاتح' : 'الوضع الداكن');
+  bind('theme-btn', n => { n.innerHTML = state.dark ? ICON_SUN : ICON_MOON; n.dataset.tip = n.title = themeText(state.dark); });
+  bind('theme-label', n => n.textContent = themeText(state.dark));
   bind('theme-icon', n => n.innerHTML = state.dark ? SUN : MOON);
   bind('intro-theme-icon', n => n.innerHTML = state.introDark ? SUN : MOON);
-  bind('intro-theme-label', n => n.textContent = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن');
-  bind('intro-theme-btn', n => { n.dataset.tip = state.introDark ? 'الوضع الفاتح' : 'الوضع الداكن'; n.setAttribute('aria-label', n.dataset.tip); });
+  bind('intro-theme-label', n => n.textContent = themeText(state.introDark));
+  bind('intro-theme-btn', n => { n.dataset.tip = themeText(state.introDark); n.setAttribute('aria-label', n.dataset.tip); });
   bind('card-title', n => n.textContent = current().title);
-  const authLabel = state.user ? 'حسابي' : 'الدخول / الاشتراك';
+  const authLabel = t(state.user ? 'حسابي' : 'الدخول / الاشتراك');
   const userName = state.user?.user_metadata?.full_name?.trim() || '';
   const initial = state.user ? [...(userName || state.user.email || '؟')][0].toUpperCase() : '';
   const avatar = cls => Object.assign(document.createElement('span'), { className: cls, textContent: initial });
@@ -122,7 +137,7 @@ function renderBindings() {
   bind('auth-name', n => n.textContent = userName);
   bind('auth-email', n => n.textContent = state.user?.email || '');
   bind('admin-link', n => n.hidden = !state.admin);
-  const faved = favIndex() >= 0, favTip = faved ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة';
+  const faved = favIndex() >= 0, favTip = t(faved ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة');
   bind('fav-btn', n => { n.classList.toggle('is-fav', faved); n.setAttribute('aria-pressed', faved); n.dataset.tip = favTip; n.setAttribute('aria-label', favTip); });
   bind('fav-sub', n => n.textContent = favs.length ? `· ${favs.length}` : '');
   el.body.dataset.theme = state.dark ? 'dark' : 'light';
@@ -131,29 +146,33 @@ function renderBindings() {
 
 function renderLists() {
   $$('[data-list="rel"]').forEach(box => {
-    box.innerHTML = RELIGIONS.map((r, i) => `<button class="pop__item" role="option" data-pick-rel="${i}" aria-selected="${i === state.rel}"><span>${r.name}</span><span class="check">${i === state.rel ? '✓' : ''}</span></button>`).join('');
+    box.innerHTML = RELIGIONS.map((r, i) => `<button class="pop__item" role="option" data-pick-rel="${i}" aria-selected="${i === state.rel}"><span>${t(r.name)}</span><span class="check">${i === state.rel ? '✓' : ''}</span></button>`).join('');
   });
-  $$('[data-list="lang"]').forEach(box => {
-    box.innerHTML = LANGS.map((l, i) => `<button class="pop__item" role="option" data-pick-lang="${i}" aria-selected="${i === state.lang}" style="font-size:14px;padding:8px 12px"><span style="white-space:nowrap">${l[0]}</span><span class="code">${l[1]}</span></button>`).join('');
-  });
+  // لغة الواجهة (القائمة المنبثقة والقائمة الجانبية)
+  const langItem = (l, i, sel, attr) => `<button class="pop__item" role="option" ${attr}="${i}" aria-selected="${i === sel}" lang="${l[1].toLowerCase()}" style="font-size:14px;padding:8px 12px"><span style="white-space:nowrap">${l[0]}</span><span class="code">${l[1]}</span></button>`;
+  $$('[data-list="lang"]').forEach(box => { box.innerHTML = LANGS.map((l, i) => langItem(l, i, state.ui, 'data-pick-ui')).join(''); });
   $$('[data-list="lang-chips"]').forEach(box => {
-    box.innerHTML = LANGS.map((l, i) => `<button class="chip" data-pick-lang="${i}" aria-selected="${i === state.lang}">${l[0]}</button>`).join('');
+    box.innerHTML = LANGS.map((l, i) => `<button class="chip" data-pick-ui="${i}" aria-selected="${i === state.ui}" lang="${l[1].toLowerCase()}">${l[0]}</button>`).join('');
+  });
+  // لغة الرسالة (زر البطاقة)
+  $$('[data-list="msg-lang"]').forEach(box => {
+    box.innerHTML = `<div class="pop__title">${t('لغة الرسالة')}</div>` + LANGS.map((l, i) => langItem(l, i, state.lang, 'data-pick-lang')).join('');
   });
   // صفحة البداية: الأديان أزرارًا ظاهرة بنفس شكل أزرار الحجم
   $$('[data-list="rel-intro"]').forEach(box => {
-    box.innerHTML = RELIGIONS.map((r, i) => `<button class="size-btn" data-pick-rel="${i}" aria-pressed="${i === state.rel}">${r.name}</button>`).join('');
+    box.innerHTML = RELIGIONS.map((r, i) => `<button class="size-btn" data-pick-rel="${i}" aria-pressed="${i === state.rel}">${t(r.name)}</button>`).join('');
   });
   $$('[data-list="size-intro"]').forEach(box => {
-    box.innerHTML = SIZES.map(s => `<button class="size-btn" data-pick-size="${s.key}" data-scope="intro" aria-pressed="${s.key === state.defLen}">${s.label}</button>`).join('');
+    box.innerHTML = SIZES.map(s => `<button class="size-btn" data-pick-size="${s.key}" data-scope="intro" aria-pressed="${s.key === state.defLen}">${t(s.label)}</button>`).join('');
   });
   $$('[data-list="size-bar"]').forEach(box => {
-    box.innerHTML = SIZES.map(s => `<button class="len__btn" data-pick-size="${s.key}" aria-pressed="${s.key === state.len}">${s.label}</button>`).join('');
+    box.innerHTML = SIZES.map(s => `<button class="len__btn" data-pick-size="${s.key}" aria-pressed="${s.key === state.len}">${t(s.label)}</button>`).join('');
   });
 }
 
 function renderSegs() {
   const n = msgs().length;
-  el.segs.innerHTML = Array.from({ length: n }, (_, i) => `<button role="tab" data-go="${i}" title="الرسالة ${i + 1}" aria-current="${i === state.cur}" aria-label="الرسالة ${i + 1}"></button>`).join('');
+  el.segs.innerHTML = Array.from({ length: n }, (_, i) => { const lbl = t('الرسالة {n}', { n: i + 1 }); return `<button role="tab" data-go="${i}" title="${lbl}" aria-current="${i === state.cur}" aria-label="${lbl}"></button>`; }).join('');
   el.counter.textContent = `${state.cur + 1} / ${n}`;
   el.next.disabled = state.cur >= n - 1;
   el.prev.disabled = state.cur <= 0;
@@ -189,7 +208,8 @@ function trackView() {
 }
 
 function renderGuide() {
-  $('#guide-items').innerHTML = GUIDE.map((g, i) => `
+  const guide = uiPack()?.guide?.length === GUIDE.length ? uiPack().guide : GUIDE;
+  $('#guide-items').innerHTML = guide.map((g, i) => `
     <div class="guide__item">
       <span class="guide__num">${i + 1}</span>
       <div><h2 class="guide__h">${g.t}</h2><p class="guide__p">${g.b}</p>${g.b2 ? `<p class="guide__p">${g.b2}</p>` : ''}</div>
@@ -226,13 +246,36 @@ function setLen(k, scope) {
   else { state.defLen = k; state.len = k; store.set('om-pref-len', k); }
   renderCardView();
 }
+// لغة الرسالة: من زر البطاقة، لهذه الجلسة فقط (الافتراضي يتبع لغة الواجهة)
 async function setLang(i) {
-  closePops();
+  closePops(); closeMenu();
   try { await loadLang(i); } catch { return; }   // تعذّر تحميل ملف اللغة: تبقى اللغة الحالية
-  state.lang = i; store.set('om-pref-lang', LANGS[i][1]);
+  state.lang = i;
   if (!state.intro) history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
   lastView = '';
   renderLists(); renderBindings(); renderCardView();
+}
+// تطبيق لغة الواجهة على الصفحة كلها: القاموس، الاتجاه، العنوان، ثم إعادة رسم ما يكتبه app.js
+function applyUi() {
+  const ui = uiPack(), code = langCode(state.ui);
+  setDict(ui?.strings);
+  document.documentElement.lang = code;
+  document.documentElement.dir = isLtr() ? 'ltr' : 'rtl';
+  document.title = t('رسائل حوارية لغير المسلمين');
+  $('meta[name="description"]')?.setAttribute('content', t('رسائل متدرجة تعين الداعية على محاورة غير المسلمين ودعوتهم إلى الإسلام.'));
+  translateDom();
+}
+// لغة الواجهة: من زر اللغة الخارجي، تُحفظ للزائر، وتأخذ الرسائل لغتها أيضًا
+async function setUi(i) {
+  closePops(); closeMenu(); closeIntroMenu();
+  try { await Promise.all([loadUi(i), loadLang(i)]); } catch { return; }
+  state.ui = i; state.lang = i; store.set('om-pref-ui', LANGS[i][1]);
+  if (!state.intro) history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
+  lastView = '';
+  applyUi();
+  renderAll(); renderBindings(); setAuthMode(authMode);
+  if (!$('#favs').hidden) renderFavs();
+  measureChrome();
 }
 
 /* ---------- الوضع الداكن ---------- */
@@ -248,6 +291,12 @@ function togglePop(btn) {
   const pop = $('#pop-' + btn.dataset.pop); const open = pop.hidden;
   closePops();
   if (open) { pop.hidden = false; btn.classList.add('is-open'); btn.setAttribute('aria-expanded', 'true'); }
+  // قائمة لغة الرسالة خارج البطاقة (البطاقة تقصّ ما يخرج منها)، فتُوضع فوق زرها
+  if (open && pop.classList.contains('pop--float')) {
+    const r = btn.getBoundingClientRect(), w = pop.offsetWidth;
+    pop.style.bottom = (innerHeight - r.top + 8) + 'px';
+    pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  }
 }
 function toggleSub(btn) {
   const sub = $('#' + btn.dataset.sub); sub.hidden = !sub.hidden; btn.classList.toggle('is-open', !sub.hidden);
@@ -292,7 +341,8 @@ el.stage.addEventListener('pointermove', e => {
   }
   if (drag.axis !== 'x') return;
   const n = msgs().length;
-  const atEdge = (dx > 0 && state.cur === n - 1) || (dx < 0 && state.cur === 0);
+  const fwd = isLtr() ? -dx : dx;
+  const atEdge = (fwd > 0 && state.cur === n - 1) || (fwd < 0 && state.cur === 0);
   drag.dx = atEdge ? dx / 4 : dx;
   el.card.style.transform = `translateX(${drag.dx}px)`;
   el.card.style.opacity = Math.max(.25, 1 - Math.abs(drag.dx) / 500);
@@ -304,8 +354,9 @@ function endDrag() {
   if (axis !== null) lastDragEnd = Date.now();
   const th = Math.min(70, innerWidth * .12);
   const n = msgs().length;
-  if (axis === 'x' && dx > th && state.cur < n - 1) { nav(1); return; }
-  if (axis === 'x' && dx < -th && state.cur > 0) { nav(-1); return; }
+  const fwd = isLtr() ? -dx : dx;   // السحب نحو الرسالة التالية يتبع اتجاه الواجهة
+  if (axis === 'x' && fwd > th && state.cur < n - 1) { nav(1); return; }
+  if (axis === 'x' && fwd < -th && state.cur > 0) { nav(-1); return; }
   el.card.style.transform = ''; el.card.style.opacity = '';
 }
 ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => el.stage.addEventListener(ev, endDrag));
@@ -405,7 +456,7 @@ async function toggleFav(btn) {
   favsChanged();
   if (!state.user) return store.set(FAV_KEY, JSON.stringify(favs));
   try { await (i >= 0 ? auth.favorites.remove(f) : auth.favorites.add([favRow(favs[0])])); }
-  catch { favs = before; favsChanged(); btn.dataset.tip = 'تعذّر الحفظ، حاول مرة أخرى'; }
+  catch { favs = before; favsChanged(); btn.dataset.tip = t('تعذّر الحفظ، حاول مرة أخرى'); }
 }
 async function delFav(i) {
   const f = favs[i], before = favs.slice(); if (!f) return;
@@ -413,7 +464,7 @@ async function delFav(i) {
   try { await auth.favorites.remove(f); }
   catch { favs = before; favsChanged(); favsMsg('تعذّر الحذف، تحقق من اتصالك وحاول مرة أخرى.'); }
 }
-function favsMsg(text) { const m = $('#favs-msg'); m.textContent = text; m.hidden = !text; }
+function favsMsg(text) { const m = $('#favs-msg'); m.textContent = t(text); m.hidden = !text; }
 // موضع الرسالة المحفوظة الآن: بعنوانها، وإلا برقمها وقت الحفظ
 function favTarget(f) {
   const rel = RELIGIONS.findIndex(r => r.key === f.rel); if (rel < 0) return null;
@@ -425,19 +476,19 @@ function renderFavs() {
   const box = $('#favs-list'), make = (tag, cls, text) => Object.assign(document.createElement(tag), { className: cls, textContent: text ?? '' });
   const empty = { loading: 'جارٍ التحميل…', error: 'تعذّر تحميل المفضلة، تحقق من اتصالك وحاول مرة أخرى.' }[favsState]
     || (!favs.length && 'لم تحفظ رسائل بعد. اضغط ♡ أسفل أي رسالة لتجدها هنا.');
-  if (empty) return box.replaceChildren(make('p', 'favs__empty', empty));
+  if (empty) return box.replaceChildren(make('p', 'favs__empty', t(empty)));
   // مجمّعة حسب الدين بترتيب القائمة، والأحدث أولًا داخل كل دين
   box.replaceChildren(...RELIGIONS.flatMap(r => {
     const items = favs.map((f, i) => ({ f, i, t: favTarget(f) })).filter(x => x.f.rel === r.key && x.t);
     if (!items.length) return [];
-    return [make('div', 'favs__group', r.name), ...items.map(({ f, i, t }) => {
+    return [make('div', 'favs__group', t(r.name)), ...items.map(({ f, i, t }) => {
       const row = make('div', 'favs__item');
       const open = make('button', 'favs__open');
       Object.assign(open.dataset, { action: 'fav-open', i });
-      open.append(make('span', '', t.title), make('span', 'favs__size', SIZES.find(s => s.key === f.size)?.label || ''));
+      open.append(make('span', '', t.title), make('span', 'favs__size', t(SIZES.find(s => s.key === f.size)?.label || '')));
       const del = make('button', 'favs__del');
       Object.assign(del.dataset, { action: 'fav-del', i });
-      del.setAttribute('aria-label', 'إزالة من المفضلة'); del.title = 'إزالة';
+      del.setAttribute('aria-label', t('إزالة من المفضلة')); del.title = t('إزالة');
       del.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>';
       row.append(open, del);
       return row;
@@ -466,7 +517,7 @@ function openFav(i) {
 /* ---------- الملاحظات ---------- */
 // تُحفظ الملاحظة في جدول feedback، ويقرؤها المشرف في صفحة الإحصاءات
 function feedbackMsg(text, ok = false) {
-  const m = $('#feedback-msg'); m.textContent = text; m.hidden = !text; m.classList.toggle('is-ok', ok);
+  const m = $('#feedback-msg'); m.textContent = t(text); m.hidden = !text; m.classList.toggle('is-ok', ok);
 }
 function openFeedback() {
   const f = $('#feedback-form');
@@ -490,7 +541,7 @@ $('#feedback-form').addEventListener('submit', async e => {
     return;
   }
   const btn = $('#feedback-send');
-  btn.disabled = true; btn.textContent = 'جارٍ الإرسال…'; feedbackMsg('');
+  btn.disabled = true; btn.textContent = t('جارٍ الإرسال…'); feedbackMsg('');
   try {
     await insertRow('feedback', { name: name || null, email: email || null, body, ...msgRef() });
     form.reset();
@@ -500,7 +551,7 @@ $('#feedback-form').addEventListener('submit', async e => {
   } catch (err) {
     feedbackMsg(auth.errorText(err));
   } finally {
-    btn.disabled = false; btn.textContent = 'إرسال';
+    btn.disabled = false; btn.textContent = t('إرسال');
   }
 });
 
@@ -514,14 +565,14 @@ let mailOpen = true;
 function setAuthMode(mode, msg = '', ok = false) {
   authMode = mode;
   // سطر تمهيدي حين تُفتح النافذة من ميزة للمشتركين (مثل المفضلة)
-  bind('auth-lead', n => { n.textContent = authLead; n.hidden = !authLead || !['in', 'up'].includes(mode); });
+  bind('auth-lead', n => { n.textContent = t(authLead); n.hidden = !authLead || !['in', 'up'].includes(mode); });
   $('#auth-form').classList.toggle('is-collapsed', !mailOpen && ['in', 'up'].includes(mode));
-  bind('auth-mail-cta', n => n.textContent = mode === 'up' ? 'الاشتراك بالبريد الإلكتروني' : 'الدخول بالبريد الإلكتروني');
+  bind('auth-mail-cta', n => n.textContent = t(mode === 'up' ? 'الاشتراك بالبريد الإلكتروني' : 'الدخول بالبريد الإلكتروني'));
   $$('[data-auth-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.authTab === mode));
   $$('[data-auth-only]').forEach(n => n.hidden = !n.dataset.authOnly.split(' ').includes(mode));
   $('#auth-pass').autocomplete = mode === 'in' ? 'current-password' : 'new-password';
-  bind('auth-cta', n => n.textContent = AUTH_CTA[mode] || '');
-  bind('auth-title', n => n.textContent = AUTH_TITLE[mode] || '');
+  bind('auth-cta', n => n.textContent = t(AUTH_CTA[mode] || ''));
+  bind('auth-title', n => n.textContent = t(AUTH_TITLE[mode] || ''));
   showPasswords(false);
   $$('#auth-form [aria-invalid]').forEach(el => el.removeAttribute('aria-invalid'));
   authMsg(msg, ok);
@@ -534,11 +585,11 @@ function showPasswords(show) {
   $$('.auth__eye').forEach(b => {
     b.innerHTML = show ? ICON_EYE_OFF : ICON_EYE;
     b.setAttribute('aria-pressed', show);
-    b.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+    b.setAttribute('aria-label', t(show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'));
   });
 }
 function authMsg(text, ok = false) {
-  const m = $('#auth-msg'); m.textContent = text; m.hidden = !text; m.classList.toggle('is-ok', ok);
+  const m = $('#auth-msg'); m.textContent = t(text); m.hidden = !text; m.classList.toggle('is-ok', ok);
 }
 function openAuth(mode = state.user ? 'account' : 'in', msg = '', ok = false, lead = '') {
   authLead = lead;
@@ -579,7 +630,7 @@ const AUTH_SUBMIT = {
     const { session } = await auth.signUp(f);
     store.set(MAIL_KEY, '1');
     if (session) $('#auth').hidden = true;
-    else authMsg(`أرسلنا رسالة تأكيد إلى ${f.email}، افتحها لتفعيل حسابك.`, true);
+    else authMsg(t('أرسلنا رسالة تأكيد إلى {email}، افتحها لتفعيل حسابك.', { email: f.email }), true);
   },
   forgot: async f => { await auth.sendReset(f.email); authMsg('إن كان البريد مسجّلًا فسيصلك رابط لتعيين كلمة مرور جديدة.', true); },
   reset: async f => { await auth.setPassword(f.pass); setAuthMode('account', 'حُفظت كلمة المرور الجديدة.', true); },
@@ -656,6 +707,7 @@ document.addEventListener('click', e => {
 
   const pickRel = t.closest('[data-pick-rel]'); if (pickRel) { setRel(+pickRel.dataset.pickRel); return; }
   const pickLang = t.closest('[data-pick-lang]'); if (pickLang) { setLang(+pickLang.dataset.pickLang); return; }
+  const pickUi = t.closest('[data-pick-ui]'); if (pickUi) { setUi(+pickUi.dataset.pickUi); return; }
   const pickSize = t.closest('[data-pick-size]'); if (pickSize) { setLen(pickSize.dataset.pickSize, pickSize.dataset.scope); return; }
   const go = t.closest('[data-go]'); if (go) { goTo(+go.dataset.go); return; }
   const tab = t.closest('[data-auth-tab]'); if (tab) { setAuthMode(tab.dataset.authTab); return; }
@@ -674,9 +726,10 @@ document.addEventListener('click', e => {
 });
 
 window.addEventListener('keydown', e => {
-  if (state.intro || e.target.matches('input, textarea')) return;
-  if (e.key === 'ArrowLeft') nav(1);
-  if (e.key === 'ArrowRight') nav(-1);
+  if (state.intro || e.target.matches?.('input, textarea')) return;
+  // التالي جهة اليسار في العربية، وجهة اليمين في الواجهة من اليسار إلى اليمين
+  if (e.key === 'ArrowLeft') nav(isLtr() ? -1 : 1);
+  if (e.key === 'ArrowRight') nav(isLtr() ? 1 : -1);
   if (e.key === 'Escape') { $$('.overlay, .guide, .drawer, .backdrop').forEach(n => n.hidden = true); closePops(); }
 });
 
@@ -686,7 +739,7 @@ function readHash() {
   if (!h.has('m')) return false;
   state.rel = Math.max(0, Math.min(RELIGIONS.length - 1, parseInt(h.get('r') || '0', 10) || 0));
   const l = h.get('l'); if (SIZE_KEYS.includes(l)) { state.len = l; state.defLen = l; }
-  // رابط رسالة مترجمة يفتحها بلغتها (دون تغيير اللغة المحفوظة للزائر)
+  // رابط رسالة مترجمة يفتحها بلغتها (لغة الرسالة فقط، دون تغيير لغة الواجهة)؛ رابط بلا lang رسالته عربية
   const g = LANGS.findIndex(x => x[1].toLowerCase() === (h.get('lang') || 'ar').toLowerCase()); state.lang = Math.max(0, g);
   state.cur = Math.max(0, Math.min(msgs().length - 1, (parseInt(h.get('m'), 10) || 1) - 1));
   state.intro = false; el.intro.hidden = true;
@@ -728,7 +781,9 @@ window.addEventListener('resize', measureChrome);
 
 /* ---------- التشغيل ---------- */
 readHash();
+try { await loadUi(state.ui); } catch { state.ui = 0; }
 try { await loadLang(state.lang); } catch { state.lang = 0; }
+applyUi();
 renderAll();
 setAuthMode('in');
 measureChrome();

@@ -39,9 +39,9 @@
     </button>
     <a href="#guide" class="ibar__guide" data-action="guide">توجيهات عامة للداعية</a>
     <div class="ibar__right">
-      <!-- لغة الرسائل: الواجهة تبقى بالعربية، واللغة تغيّر نص الرسائل فقط -->
+      <!-- لغة الواجهة: تغيّر كلمات الموقع واتجاهه، والرسائل تتبعها (ولكل رسالة زر لغتها في البطاقة) -->
       <div style="position:relative">
-        <button class="pill tip tip--down" data-tip="لغة الرسائل" data-action="toggle-pop" data-pop="intro-lang" aria-haspopup="listbox" aria-label="لغة الرسائل">
+        <button class="pill tip tip--down" data-tip="اللغة" data-action="toggle-pop" data-pop="intro-lang" aria-haspopup="listbox" aria-label="اللغة">
           <span data-bind="lang-name"></span><span class="chev" style="width:7px;height:7px"></span>
         </button>
         <div class="pop pop--down pop--grid" id="pop-intro-lang" data-list="lang" role="listbox" hidden></div>
@@ -83,7 +83,7 @@
     <button class="drawer__item" data-action="auth" data-bind="auth-label">الدخول / الاشتراك</button>
     <button class="drawer__item" data-action="favs"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z"/></svg><span>المفضلة <span class="sub" data-bind="fav-sub"></span></span></button>
     <button class="drawer__item" data-action="intro-theme"><svg class="drawer__ic" data-bind="intro-theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg><span data-bind="intro-theme-label"></span></button>
-    <button class="drawer__item" data-action="toggle-sub" data-sub="intro-lang-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>لغة الرسائل <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
+    <button class="drawer__item" data-action="toggle-sub" data-sub="intro-lang-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
     <div class="drawer__sub drawer__sub--chips" id="intro-lang-sub" data-list="lang-chips" hidden></div>
   </aside>
 </section>
@@ -93,18 +93,20 @@
   <section class="screen">
     <article class="card" id="card" data-screen-label="بطاقة الرسالة">
       <div class="card__head">
-        <h2 class="card__title" id="card-title"></h2>
+        <h2 class="card__title" id="card-title" data-no-i18n></h2>
         <div class="card__rule"></div>
         <div class="card__fade"></div>
       </div>
       <div class="card__view">
         <div class="card__scroll" id="card-scroll">
-          <div class="card__body" id="card-body" data-size="S"></div>
+          <div class="card__body" id="card-body" data-size="S" data-no-i18n></div>
         </div>
         <div class="card__track" id="card-track" aria-hidden="true" hidden><div class="card__thumb" id="card-thumb"></div></div>
       </div>
       <div class="card__foot">
         <div class="card__actions">
+          <!-- لغة هذه الرسالة: تترجمها دون تغيير لغة الواجهة -->
+          <button class="icon-btn icon-btn--wide tip" data-tip="لغة الرسالة" data-action="toggle-pop" data-pop="msg-lang" aria-haspopup="listbox" aria-label="لغة الرسالة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span class="lang-code" data-bind="msg-lang-code"></span></button>
           <button class="icon-btn tip" data-tip="مشاركة" data-action="share" aria-label="مشاركة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.7" x2="15.4" y2="6.3"/><line x1="8.6" y1="13.3" x2="15.4" y2="17.7"/></svg></button>
           <button class="icon-btn tip" data-tip="نسخ النص" data-action="copy" id="btn-copy" aria-label="نسخ النص"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
           <button class="icon-btn tip" data-tip="تحميل البطاقة" data-action="download" aria-label="تحميل البطاقة"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="6,11 12,17 18,11"/><path d="M4 21h16"/></svg></button>
@@ -118,6 +120,8 @@
     </article>
   </section>
 </main>
+<!-- قائمة لغة الرسالة: خارج البطاقة لأن البطاقة تقصّ ما يخرج منها، ويضعها app.js فوق زرها -->
+<div class="pop pop--float" id="pop-msg-lang" data-list="msg-lang" role="listbox" hidden></div>
 
 <!-- التنقّل -->
 <div class="edge edge--next" data-edge="1" aria-hidden="true"></div>
@@ -160,7 +164,7 @@
       <span class="topnav__sep"></span>
       <div class="topnav__tools topnav__tools--ltr">
         <div style="position:relative">
-          <button class="icon-btn icon-btn--wide tip" data-tip="لغة الرسائل" data-action="toggle-pop" data-pop="bar-lang" aria-haspopup="listbox" aria-label="لغة الرسائل" style="padding:0 10px 0 9px">
+          <button class="icon-btn icon-btn--wide tip" data-tip="اللغة" data-action="toggle-pop" data-pop="bar-lang" aria-haspopup="listbox" aria-label="اللغة" style="padding:0 10px 0 9px">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span class="lang-code" data-bind="lang-code"></span><span class="chev"></span>
           </button>
           <div class="pop pop--lang pop--grid pop--down" id="pop-bar-lang" data-list="lang" role="listbox" hidden style="top:auto;bottom:calc(100% + 10px)"></div>
@@ -194,7 +198,7 @@
   <button class="drawer__item" data-action="theme"><svg class="drawer__ic" data-bind="theme-icon" viewBox="0 0 24 24" aria-hidden="true"></svg><span data-bind="theme-label"></span></button>
   <button class="drawer__item" data-action="toggle-sub" data-sub="menu-rel-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 15.5a5 5 0 0 1 5.5 4.5"/></svg><span>دين المدعو <span class="sub">· <span data-bind="rel-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub" id="menu-rel-sub" data-list="rel" hidden></div>
-  <button class="drawer__item" data-action="toggle-sub" data-sub="menu-lang-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>لغة الرسائل <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
+  <button class="drawer__item" data-action="toggle-sub" data-sub="menu-lang-sub"><svg class="drawer__ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span>اللغة <span class="sub">· <span data-bind="lang-name"></span></span></span><span class="chev"></span></button>
   <div class="drawer__sub drawer__sub--chips" id="menu-lang-sub" data-list="lang-chips" hidden></div>
 </aside>
 
@@ -254,7 +258,7 @@
     <p class="guide__intro">هذه التوجيهات تساعد الداعية على الإفادة من الرسائل الجاهزة في الموقع بصورة صحيحة، وتحقيق المقصود من الحوار.</p>
   </div>
   <div class="guide__list">
-    <div id="guide-items"></div>
+    <div id="guide-items" data-no-i18n></div>
     <div class="guide__cta"><button data-action="close-guide">ابدأ الرسائل</button></div>
   </div>
 </section>
@@ -266,7 +270,7 @@
     <div class="share__body">
       <div class="share__title" data-bind="card-title"></div>
       <div class="share__rule"></div>
-      <div class="share__text" id="share-text"></div>
+      <div class="share__text" id="share-text" data-no-i18n></div>
     </div>
     <div class="share__foot">
       <a class="share__soc share__soc--wa" data-share="wa" target="_blank" rel="noopener" title="واتساب" href="#"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4 0-.5.2-.7l.5-.6c.1-.2.1-.3 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.9.9-1 2.2-.1 3.7a11.6 11.6 0 0 0 4.5 4.2c1.7.8 2.4.8 3.2.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2 0 0-.2-.1-.6-.2z"/></svg></a>
