@@ -26,7 +26,8 @@ export function segmentsFromHtml(html) {
   return { segs, text };
 }
 
-export async function renderCard({ title, segs, url, logoSrc }) {
+export async function renderCard({ title, segs, url, logoSrc, dir = 'rtl' }) {
+  const ltr = dir === 'ltr';
   try { await document.fonts.ready; } catch (e) {}
   const W = 1080, pad = 120, maxW = W - pad * 2;
   const meas = document.createElement('canvas').getContext('2d');
@@ -68,19 +69,21 @@ export async function renderCard({ title, segs, url, logoSrc }) {
   ctx.fillStyle = '#f6efe1'; ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = '#b99d59'; ctx.lineWidth = 2; ctx.strokeRect(52, 52, W - 104, H - 104);
   ctx.strokeStyle = 'rgba(185,157,89,.4)'; ctx.strokeRect(68, 68, W - 136, H - 136);
-  ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.direction = ltr ? 'ltr' : 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   let y = 110 + (H - footH - 110 - contentH) / 2 + tLH / 2;
   ctx.fillStyle = '#1d2531'; ctx.font = titleFont;
   for (const l of tLines) { ctx.fillText(l, W / 2, y); y += tLH; }
   y += 8; ctx.fillStyle = '#b99d59'; ctx.beginPath(); ctx.roundRect(W / 2 - 120, y - 2, 240, 4, 2); ctx.fill(); y += 78;
   for (const ln of bLines) {
     if (!ln.length) { y += bLH * .35; continue; }
+    // الكلمات من اليمين في العربية، ومن اليسار في اللغات الأخرى
     const total = ln.reduce((a, it) => a + it.ww + (it.sw || 0), 0);
-    let x = W / 2 + total / 2; ctx.textAlign = 'right';
+    let x = ltr ? W / 2 - total / 2 : W / 2 + total / 2; ctx.textAlign = ltr ? 'left' : 'right';
     for (const it of ln) {
       ctx.font = styles[it.t].font; ctx.fillStyle = styles[it.t].color;
       ctx.fillText(it.w, x, y);
-      meas.font = styles[it.t].font; x -= it.ww + meas.measureText(' ').width;
+      meas.font = styles[it.t].font; const step = it.ww + meas.measureText(' ').width;
+      x += ltr ? step : -step;
     }
     y += bLH;
   }

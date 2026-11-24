@@ -354,6 +354,12 @@ button { cursor: pointer; }
 .card__thumb.is-dragging { cursor: grabbing; background: var(--gold); }
 
 .card__body { direction: rtl; padding: 0 18px 0 0; }
+/* الرسائل المترجمة إلى لغة تُكتب من اليسار: الاتجاه يأتي من dir الذي يضعه app.js */
+.card__body[dir="ltr"] { direction: ltr; text-align: left; }
+.card__body[dir="ltr"] p { hyphens: auto; }
+.card__body[dir="ltr"] .q, .share__text[dir="ltr"] .q { font-style: italic; }
+.card__title[dir="ltr"] { direction: ltr; }
+.share__text[dir="ltr"] { direction: ltr; text-align: left; }
 .card__body p { margin: 0; line-height: 2.1; color: var(--text); text-wrap: pretty; }
 .card__body p + p { margin-top: 10px; }
 .card__body[data-size="S"] p { font-size: clamp(18px, 4.5vw, 22px); text-align: center; }

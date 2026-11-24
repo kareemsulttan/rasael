@@ -23,18 +23,47 @@ const state = {
   defLen: savedLen, len: savedLen,
   dark: store.get('om-pref-dark') === '1',
   introDark: store.get('om-pref-idark') !== '0',
-  lang: 0, step: 1,
+  lang: Math.max(0, LANGS.findIndex(l => l[1] === store.get('om-pref-lang'))), step: 1,
   intro: true,
   user: null, admin: false,
 };
 const msgs = () => MESSAGES[RELIGIONS[state.rel].set];
-const current = () => msgs()[state.cur];
+// الرسالة العربية: هي هوية الرسالة في المفضلة والإحصاءات والملاحظات مهما كانت لغة العرض
+const arCurrent = () => msgs()[state.cur];
+
+/* ---------- لغة الرسائل ---------- */
+// العربية هي الأصل؛ كل لغة أخرى في js/i18n/<code>.js وتُحمَّل عند اختيارها فقط.
+// الواجهة تبقى بالعربية، واللغة تغيّر نص الرسائل التي يرسلها الداعية. ما لم يُترجم يظهر بالعربية.
+const packs = {};
+const langCode = (i = state.lang) => LANGS[i][1].toLowerCase();
+async function loadLang(i) {
+  if (!i) return;
+  const code = langCode(i);
+  packs[code] ??= (await import(`./i18n/${code}.js`)).default;
+}
+const pack = () => (state.lang ? packs[langCode()] : null);
+const langDir = () => pack()?.dir || 'rtl';
+// الرسالة المعروضة: الترجمة إن وُجدت، وإلا العربية حقلًا بحقل
+const current = () => {
+  const a = arCurrent(), t = pack()?.messages?.[RELIGIONS[state.rel].set]?.[state.cur];
+  if (!t) return a;
+  const out = { ...a };
+  for (const k of ['title', 'short', 'medium', 'long']) if (t[k]) out[k] = t[k];
+  return out;
+};
+const isTranslated = () => !!pack()?.messages?.[RELIGIONS[state.rel].set]?.[state.cur]?.[sizeField(state.len)];
+// اتجاه النص ولغته على عنصر يعرض الرسالة
+function setTextLang(node) {
+  const tr = isTranslated();
+  node.dir = tr ? langDir() : 'rtl';
+  node.lang = tr ? langCode() : 'ar';
+}
 
 // المفضلة: [{ rel, title, msg, size, at }] الأحدث أولًا، من حساب المشترك أو من متصفح الزائر.
 // تُعرَّف الرسالة بدينها وعنوانها (لا برقمها) حتى تبقى صحيحة إن تغيّر ترتيب الرسائل.
 let favs = [];
-const favIndex = () => favs.findIndex(f => f.rel === RELIGIONS[state.rel].key && f.title === current().title);
-const msgUrl = () => `${SITE_URL}#r=${state.rel}&m=${state.cur + 1}&l=${state.len}`;
+const favIndex = () => favs.findIndex(f => f.rel === RELIGIONS[state.rel].key && f.title === arCurrent().title);
+const msgUrl = () => `${SITE_URL}#r=${state.rel}&m=${state.cur + 1}&l=${state.len}${state.lang ? '&lang=' + langCode() : ''}`;
 const cardText = () => {
   const m = current(); const { text } = segmentsFromHtml(m[sizeField(state.len)]);
   return { title: m.title, text };
@@ -133,9 +162,10 @@ function renderSegs() {
 function renderCardView(animate = false) {
   const m = current();
   el.title.textContent = m.title;
-  el.title.classList.toggle('card__title--long', m.title.length > 30);
+  el.title.classList.toggle('card__title--long', m.title.length > (langDir() === 'ltr' ? 48 : 30));
   el.cbody.dataset.size = state.len;
   el.cbody.innerHTML = m[sizeField(state.len)];
+  setTextLang(el.title); setTextLang(el.cbody);
   el.scroll.scrollTop = 0; el.stage.scrollTop = 0;
   try { el.cqr.src = qrDataUrl(msgUrl(), 8, 2); } catch { el.cqr.src = 'images/qr-site.png'; }
   if (animate) { el.card.classList.remove('is-entering'); void el.card.offsetWidth; el.card.classList.add('is-entering'); }
@@ -147,13 +177,15 @@ function renderCardView(animate = false) {
 }
 
 /* ---------- الإحصاءات (track.js) ---------- */
-const msgRef = () => ({ rel: RELIGIONS[state.rel].key, msg: state.cur + 1, title: current().title });
+const msgRef = () => ({ rel: RELIGIONS[state.rel].key, msg: state.cur + 1, title: arCurrent().title });
+// أحداث الإحصاءات تحمل لغة الرسالة أيضًا (عمود lang في جدول events)
+const evRef = () => ({ ...msgRef(), lang: LANGS[state.lang][1] });
 let lastView = '';
 // تُحسب قراءة الرسالة مرة عند ظهورها، لا عند تغيير حجمها
 function trackView() {
   const key = `${state.rel}:${state.cur}`;
   if (state.intro || key === lastView) return;
-  lastView = key; track('view', { ...msgRef(), size: state.len });
+  lastView = key; track('view', { ...evRef(), size: state.len });
 }
 
 function renderGuide() {
@@ -194,7 +226,14 @@ function setLen(k, scope) {
   else { state.defLen = k; state.len = k; store.set('om-pref-len', k); }
   renderCardView();
 }
-function setLang(i) { state.lang = i; closePops(); renderLists(); renderBindings(); }
+async function setLang(i) {
+  closePops();
+  try { await loadLang(i); } catch { return; }   // تعذّر تحميل ملف اللغة: تبقى اللغة الحالية
+  state.lang = i; store.set('om-pref-lang', LANGS[i][1]);
+  if (!state.intro) history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
+  lastView = '';
+  renderLists(); renderBindings(); renderCardView();
+}
 
 /* ---------- الوضع الداكن ---------- */
 function toggleTheme() { state.dark = !state.dark; store.set('om-pref-dark', state.dark ? '1' : '0'); renderBindings(); }
@@ -285,17 +324,17 @@ $$('.edge').forEach(e => {
 let cardPromise = null;
 function generateCard() {
   const m = current(); const { segs } = segmentsFromHtml(m[sizeField(state.len)]);
-  cardPromise = renderCard({ title: m.title, segs, url: msgUrl(), logoSrc: 'images/logo.png' });
+  cardPromise = renderCard({ title: m.title, segs, url: msgUrl(), logoSrc: 'images/logo.png', dir: isTranslated() ? langDir() : 'rtl' });
   return cardPromise;
 }
 async function copyText(btn) {
   const { title, text } = cardText();
   try { await navigator.clipboard.writeText(title + '\n\n' + text); } catch {}
   btn.classList.add('is-ok'); setTimeout(() => btn.classList.remove('is-ok'), 1600);
-  track('copy', msgRef());
+  track('copy', evRef());
 }
 async function downloadCard() {
-  track('download', msgRef());
+  track('download', evRef());
   const { dataUrl } = await generateCard();
   const a = document.createElement('a'); a.href = dataUrl; a.download = (current().title || 'رسالة') + '.png'; a.click();
 }
@@ -303,6 +342,7 @@ function openShare() {
   const { title, text } = cardText();
   // المعاينة بتنسيق البطاقة نفسه (الآيات بخط Amiri وعلامة الآية حول رقمها)؛ المُرسَل يبقى نصًا
   $('#share-text').innerHTML = current()[sizeField(state.len)];
+  setTextLang($('#share-text'));
   const payload = encodeURIComponent(title + '\n\n' + text), page = encodeURIComponent(msgUrl());
   const links = {
     wa: 'https://wa.me/?text=' + payload,
@@ -327,7 +367,7 @@ async function shareNative(e) {
 const FAV_LEAD = 'اشترك لتحفظ الرسائل المفضلة في حسابك';
 const FAV_KEY = 'om-favs';
 let favsFor = null, favsState = 'ready';
-const favOf = () => ({ rel: RELIGIONS[state.rel].key, title: current().title, msg: state.cur + 1, size: state.len });
+const favOf = () => ({ rel: RELIGIONS[state.rel].key, title: arCurrent().title, msg: state.cur + 1, size: state.len });
 const favRow = f => ({
   rel: String(f.rel).slice(0, 20), title: String(f.title).slice(0, 200),
   msg: Number.isInteger(f.msg) && f.msg >= 1 && f.msg <= 500 ? f.msg : null,
@@ -444,7 +484,7 @@ $('#feedback-form').addEventListener('submit', async e => {
   if (!body) return feedbackMsg('اكتب ملاحظتك أولًا.');
   const name = String(f.get('name') || '').trim(), email = String(f.get('email') || '').trim();
   if (!auth.authEnabled) {   // بلا Supabase: تُفتح رسالة بريد جاهزة كما كان
-    const subject = encodeURIComponent('ملاحظة على رسالة: ' + current().title);
+    const subject = encodeURIComponent('ملاحظة على رسالة: ' + arCurrent().title + (state.lang ? ` (${LANGS[state.lang][1]})` : ''));
     location.href = `mailto:info@islamiccontent.sa?subject=${subject}&body=${encodeURIComponent(`${body}\n\n— ${name}${email ? ' <' + email + '>' : ''}\n${msgUrl()}`)}`;
     $('#feedback').hidden = true; form.reset();
     return;
@@ -619,7 +659,7 @@ document.addEventListener('click', e => {
   const pickSize = t.closest('[data-pick-size]'); if (pickSize) { setLen(pickSize.dataset.pickSize, pickSize.dataset.scope); return; }
   const go = t.closest('[data-go]'); if (go) { goTo(+go.dataset.go); return; }
   const tab = t.closest('[data-auth-tab]'); if (tab) { setAuthMode(tab.dataset.authTab); return; }
-  const soc = t.closest('[data-share]'); if (soc) { track('share', { ...msgRef(), channel: soc.dataset.share }); shareNative(e); return; }
+  const soc = t.closest('[data-share]'); if (soc) { track('share', { ...evRef(), channel: soc.dataset.share }); shareNative(e); return; }
 
   const act = t.closest('[data-action]');
   if (act) {
@@ -646,6 +686,8 @@ function readHash() {
   if (!h.has('m')) return false;
   state.rel = Math.max(0, Math.min(RELIGIONS.length - 1, parseInt(h.get('r') || '0', 10) || 0));
   const l = h.get('l'); if (SIZE_KEYS.includes(l)) { state.len = l; state.defLen = l; }
+  // رابط رسالة مترجمة يفتحها بلغتها (دون تغيير اللغة المحفوظة للزائر)
+  const g = LANGS.findIndex(x => x[1].toLowerCase() === (h.get('lang') || 'ar').toLowerCase()); state.lang = Math.max(0, g);
   state.cur = Math.max(0, Math.min(msgs().length - 1, (parseInt(h.get('m'), 10) || 1) - 1));
   state.intro = false; el.intro.hidden = true;
   return true;
@@ -686,6 +728,7 @@ window.addEventListener('resize', measureChrome);
 
 /* ---------- التشغيل ---------- */
 readHash();
+try { await loadLang(state.lang); } catch { state.lang = 0; }
 renderAll();
 setAuthMode('in');
 measureChrome();
