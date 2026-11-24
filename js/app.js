@@ -312,7 +312,7 @@ function closeIntroMenu() { $('#intro-drawer').hidden = true; $('#intro-backdrop
 // حسب tip--down / tip--side / tip--left) ثم يُحصر داخل الشاشة، فلا تقصّه البطاقة ولا الحواف.
 const tipBox = Object.assign(document.createElement('div'), { className: 'tipbox', role: 'tooltip' });
 tipBox.dir = 'auto'; document.body.append(tipBox);
-let tipFor = null;
+let tipFor = null, tipMuted = null;   // tipMuted: زر نُقر فلا يعود تلميحه حتى يغادره المؤشر
 function showTip(target) {
   const text = target.dataset.tip; if (!text) return hideTip();
   tipFor = target; tipBox.textContent = text;
@@ -339,11 +339,12 @@ if (matchMedia('(hover: hover)').matches) {
   document.addEventListener('pointerover', e => {
     if (e.pointerType !== 'mouse') return;
     const el = e.target.closest?.('.tip[data-tip]');
-    if (el && el !== tipFor) showTip(el); else if (!el && tipFor) hideTip();
+    if (el !== tipMuted) tipMuted = null;
+    if (el && el !== tipFor && el !== tipMuted) showTip(el); else if (!el && tipFor) hideTip();
   });
-  document.addEventListener('pointerout', e => { if (!e.relatedTarget) hideTip(); });   // خرج المؤشر من الصفحة
-  // النقر يغيّر حال بعض الأزرار (المفضلة مثلًا)، فيُحدَّث التلميح أو يختفي
-  document.addEventListener('click', () => { const el = tipFor; hideTip(); if (el?.isConnected && el.matches(':hover')) requestAnimationFrame(() => showTip(el)); }, true);
+  document.addEventListener('pointerout', e => { if (!e.relatedTarget) { hideTip(); tipMuted = null; } });   // خرج المؤشر من الصفحة
+  // التلميح للمرور فقط: النقر يخفيه، ولا يعود حتى يغادر المؤشر الزر ثم يرجع إليه
+  document.addEventListener('click', e => { const el = e.target.closest?.('.tip[data-tip]'); hideTip(); tipMuted = el || null; }, true);
   addEventListener('scroll', hideTip, true); addEventListener('resize', hideTip);
 }
 
