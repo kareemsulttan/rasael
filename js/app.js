@@ -254,6 +254,7 @@ async function setLang(i) {
   if (!state.intro) history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
   lastView = '';
   renderLists(); renderBindings(); renderCardView();
+  if (!$('#share').hidden) openShare();   // نافذة المشاركة مفتوحة: نصها وروابطها وصورتها باللغة الجديدة
 }
 // تطبيق لغة الواجهة على الصفحة كلها: القاموس، الاتجاه، العنوان، ثم إعادة رسم ما يكتبه app.js
 function applyUi() {
@@ -305,6 +306,46 @@ function openMenu() { $('#menu-drawer').hidden = false; $('#menu-backdrop').hidd
 function closeMenu() { $('#menu-drawer').hidden = true; $('#menu-backdrop').hidden = true; $$('#menu-drawer .drawer__sub').forEach(s => s.hidden = true); $$('#menu-drawer .is-open').forEach(b => b.classList.remove('is-open')); }
 function openIntroMenu() { $('#intro-drawer').hidden = false; $('#intro-backdrop').hidden = false; }
 function closeIntroMenu() { $('#intro-drawer').hidden = true; $('#intro-backdrop').hidden = true; $('#intro-lang-sub').hidden = true; $$('#intro-drawer .is-open').forEach(b => b.classList.remove('is-open')); }
+
+/* ---------- تلميحات الأزرار ---------- */
+// عنصر واحد عائم فوق الصفحة: يأخذ نصه من data-tip عند المرور، ويوضع فوق الزر (أو تحته/جانبه
+// حسب tip--down / tip--side / tip--left) ثم يُحصر داخل الشاشة، فلا تقصّه البطاقة ولا الحواف.
+const tipBox = Object.assign(document.createElement('div'), { className: 'tipbox', role: 'tooltip' });
+tipBox.dir = 'auto'; document.body.append(tipBox);
+let tipFor = null;
+function showTip(target) {
+  const text = target.dataset.tip; if (!text) return hideTip();
+  tipFor = target; tipBox.textContent = text;
+  // فاتح فوق الخلفية الداكنة لصفحة البداية، وداكن في غيرها
+  tipBox.classList.toggle('tipbox--light', !!target.closest('.intro[data-theme="dark"], .drawer--intro'));
+  tipBox.classList.add('is-on');
+  const r = target.getBoundingClientRect(), w = tipBox.offsetWidth, h = tipBox.offsetHeight, gap = 8, m = 8;
+  const side = target.classList.contains('tip--side') ? (isLtr() ? 'left' : 'right')
+    : target.classList.contains('tip--left') ? (isLtr() ? 'right' : 'left') : null;
+  let x, y;
+  if (side === 'right') { x = r.right + gap; y = r.top + r.height / 2 - h / 2; if (x + w > innerWidth - m) x = r.left - gap - w; }
+  else if (side === 'left') { x = r.left - gap - w; y = r.top + r.height / 2 - h / 2; if (x < m) x = r.right + gap; }
+  else {
+    x = r.left + r.width / 2 - w / 2;
+    const below = target.classList.contains('tip--down');
+    y = below ? r.bottom + gap : r.top - gap - h;
+    if (!below && y < m) y = r.bottom + gap;                 // لا مكان فوقه: تحته
+    if (below && y + h > innerHeight - m) y = r.top - gap - h;
+  }
+  tipBox.style.transform = `translate(${Math.round(Math.max(m, Math.min(innerWidth - w - m, x)))}px, ${Math.round(Math.max(m, Math.min(innerHeight - h - m, y)))}px)`;
+}
+function hideTip() { tipFor = null; tipBox.classList.remove('is-on'); }
+if (matchMedia('(hover: hover)').matches) {
+  document.addEventListener('pointerover', e => {
+    if (e.pointerType !== 'mouse') return;
+    const el = e.target.closest?.('.tip[data-tip]');
+    if (el && el !== tipFor) showTip(el); else if (!el && tipFor) hideTip();
+  });
+  document.addEventListener('pointerout', e => { if (!e.relatedTarget) hideTip(); });   // خرج المؤشر من الصفحة
+  // النقر يغيّر حال بعض الأزرار (المفضلة مثلًا)، فيُحدَّث التلميح أو يختفي
+  document.addEventListener('click', () => { const el = tipFor; hideTip(); if (el?.isConnected && el.matches(':hover')) requestAnimationFrame(() => showTip(el)); }, true);
+  addEventListener('scroll', hideTip, true); addEventListener('resize', hideTip);
+}
 
 /* ---------- البداية والتلميح ---------- */
 let hintT1, hintT2;

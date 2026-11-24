@@ -108,27 +108,17 @@ button { cursor: pointer; }
 }
 .is-open > .chev, .is-open .chev { transform: rotate(-135deg) translate(-2px, -2px); }
 
-/* تلميحات الأزرار */
+/* تلميحات الأزرار: عنصر واحد عائم يضعه app.js بجانب الزر ويُبقيه داخل الشاشة،
+   فلا تقصّه البطاقة ولا حافة الشاشة مهما طال النص. الموضع من tip--down / tip--side / tip--left */
 .tip { position: relative; }
-.tip::after {
-  content: attr(data-tip);
-  position: absolute; bottom: calc(100% + 8px); left: 50%;
-  transform: translateX(-50%) translateY(4px);
+.tipbox {
+  position: fixed; z-index: 100; top: 0; left: 0; max-width: min(320px, calc(100vw - 16px));
   background: var(--navy); color: var(--chrome);
-  font: 12px/1.4 var(--font-ui); padding: 5px 10px; border-radius: 6px;
-  white-space: nowrap; direction: rtl; unicode-bidi: plaintext;
-  opacity: 0; pointer-events: none; transition: opacity .15s, transform .15s; z-index: 5;
+  font: 12px/1.4 var(--font-ui); padding: 5px 10px; border-radius: 6px; unicode-bidi: plaintext;
+  pointer-events: none; opacity: 0; transition: opacity .15s;
 }
-.tip:hover::after { opacity: 1; transform: translateX(-50%) translateY(0); }
-.tip--start::after { left: 0; transform: translateX(0) translateY(4px); }
-.tip--start:hover::after { transform: translateX(0) translateY(0); }
-.tip--side::after { bottom: auto; top: 50%; left: calc(100% + 10px); transform: translateY(-50%) translateX(-4px); }
-.tip--side:hover::after { transform: translateY(-50%) translateX(0); }
-.tip--left::after { bottom: auto; top: 50%; left: auto; right: calc(100% + 10px); transform: translateY(-50%) translateX(4px); }
-.tip--left:hover::after { transform: translateY(-50%) translateX(0); }
-.tip--down::after { bottom: auto; top: calc(100% + 8px); transform: translateX(-50%) translateY(-4px); }
-.tip--down:hover::after { transform: translateX(-50%) translateY(0); }
-@media (hover: none) { .tip::after { display: none; } }
+.tipbox.is-on { opacity: 1; }
+.tipbox--light { background: var(--chrome); color: var(--navy); }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fade-out { to { opacity: 0; } }
@@ -283,8 +273,6 @@ button { cursor: pointer; }
 .intro[data-theme="light"] .pill { border-color: var(--line-2); color: var(--muted-6); }
 .intro[data-theme="light"] .pill--gold { border: none; background: var(--gold); color: var(--navy); }
 .intro[data-theme="light"] .mode-btn, .intro[data-theme="light"] .ibar__burger { border-color: var(--line-2); color: var(--gold-ink); }
-.intro .tip::after { background: var(--chrome); color: var(--navy); }
-.intro[data-theme="light"] .tip::after { background: var(--navy); color: var(--chrome); }
 .intro[data-theme="light"] .ibar__burger svg { stroke: var(--gold-ink); }
 .intro[data-theme="light"] .intro__title { color: var(--ink); }
 .intro[data-theme="light"] .intro__desc { color: #5a6170; }
@@ -877,7 +865,7 @@ body[data-theme="dark"] { background: var(--navy-deep); }
 
 /* 12) لغة الرسالة في البطاقة --------------------------------------------------- */
 /* القائمة خارج البطاقة (البطاقة تقصّ ما يخرج منها)، ويضعها app.js فوق زرها */
-.pop--float { position: fixed; z-index: 60; width: 200px; background: var(--card); border-color: var(--line); box-shadow: 0 14px 30px rgba(60, 50, 30, .15); }
+.pop--float { position: fixed; z-index: 90; width: 200px; background: var(--card); border-color: var(--line); box-shadow: 0 14px 30px rgba(60, 50, 30, .15); }
 .pop--float .pop__title { color: var(--muted-4); }
 .pop--float .pop__item { color: var(--muted-3); font-size: 14px; padding: 8px 12px; }
 .pop--float .pop__item:hover, .pop--float .pop__item[aria-selected="true"] { background: #f1ebdf; color: var(--ink); }
@@ -905,7 +893,6 @@ html[dir="ltr"] .topnav .pop--lang { left: auto; right: 0; direction: ltr; }
 html[dir="ltr"] .bar__menu--mode { left: auto; right: 12px; }
 html[dir="ltr"] .bar__menu--open { right: auto; left: 12px; }
 html[dir="ltr"] .guide__back { right: auto; left: 32px; }
-html[dir="ltr"] .tip::after { direction: ltr; }
 @media (max-width: 1200px) {
   html[dir="ltr"] .side--next { left: auto; right: 10px; }
   html[dir="ltr"] .side--prev { right: auto; left: 10px; }
@@ -917,4 +904,10 @@ html[dir="ltr"] .tip::after { direction: ltr; }
 @media (max-width: 768px) {
   .card__foot { padding: 10px 12px; gap: 8px; }
   .card__actions { gap: 8px; }
+}
+/* زر لغة الرسالة في نافذة المشاركة */
+.share__foot .icon-btn--wide { width: auto; padding: 0 14px; gap: 8px; }
+@media (max-width: 480px) {
+  /* الجوال: تطبيقات المشاركة في صف، والنسخ واللغة والتحميل في صف تحته */
+  .share__sep { flex-basis: 100%; width: auto; height: 0; }
 }
