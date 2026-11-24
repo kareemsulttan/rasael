@@ -122,6 +122,7 @@
 </main>
 <!-- قائمة لغة الرسالة: خارج البطاقة لأن البطاقة تقصّ ما يخرج منها، ويضعها app.js فوق زرها -->
 <div class="pop pop--float" id="pop-msg-lang" data-list="msg-lang" role="listbox" hidden></div>
+<div class="pop pop--float" id="pop-share-lang" data-list="share-lang" role="listbox" hidden></div>
 
 <!-- التنقّل -->
 <div class="edge edge--next" data-edge="1" aria-hidden="true"></div>
@@ -268,7 +269,7 @@
   <div class="share" data-stop>
     <div class="share__head"><span>مشاركة الرسالة</span><button class="share__x" data-action="close-share" aria-label="إغلاق">✕</button></div>
     <div class="share__body">
-      <div class="share__title" data-bind="card-title"></div>
+      <div class="share__title" id="share-title" data-no-i18n></div>
       <div class="share__rule"></div>
       <div class="share__text" id="share-text" data-no-i18n></div>
     </div>
@@ -279,8 +280,8 @@
       <a class="share__soc share__soc--fb" data-share="fb" target="_blank" rel="noopener" title="فيسبوك" href="#"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.7c0-.9.3-1.6 1.6-1.6h1.7V4.2c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.4H7.4V14h2.7v8h3.4z"/></svg></a>
       <span class="share__sep"></span>
       <button class="icon-btn" data-action="share-copy" id="btn-share-copy" title="نسخ النص" aria-label="نسخ النص"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
-      <!-- لغة الرسالة المشاركة: نفس قائمة زر البطاقة -->
-      <button class="icon-btn icon-btn--wide tip" data-tip="لغة الرسالة" data-action="toggle-pop" data-pop="msg-lang" aria-haspopup="listbox" aria-label="لغة الرسالة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span class="lang-code" data-bind="msg-lang-code"></span></button>
+      <!-- لغة الرسالة المشاركة: خاصة بهذه النافذة، لا تغيّر لغة البطاقة -->
+      <button class="icon-btn icon-btn--wide tip" data-tip="لغة الرسالة" data-action="toggle-pop" data-pop="share-lang" aria-haspopup="listbox" aria-label="لغة الرسالة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg><span class="lang-code" data-bind="share-lang-code"></span></button>
       <button class="icon-btn" data-action="share-download" title="تحميل البطاقة" aria-label="تحميل البطاقة"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="6,11 12,17 18,11"/><path d="M4 21h16"/></svg></button>
     </div>
   </div>

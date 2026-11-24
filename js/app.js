@@ -27,6 +27,7 @@ const state = {
   // ui: لغة الواجهة (زر اللغة الخارجي، تُحفظ للزائر)، lang: لغة الرسائل (تتبع الواجهة، ويغيّرها زر البطاقة)
   ui: Math.max(0, LANGS.findIndex(l => l[1] === (store.get('om-pref-ui') || store.get('om-pref-lang')))),
   lang: 0, step: 1,
+  shareLang: 0,   // لغة نافذة المشاركة: تبدأ بلغة البطاقة، وزرها يغيّرها هي وحدها
   intro: true,
   user: null, admin: false,
 };
@@ -51,33 +52,34 @@ async function loadUi(i) {
   const code = langCode(i);
   uiPacks[code] ??= (await import(`./i18n/${code}-ui.js`)).default;
 }
-const pack = () => (state.lang ? packs[langCode()] : null);
+// li: رقم لغة الرسالة؛ الافتراضي لغة البطاقة، ونافذة المشاركة تمرّر لغتها (state.shareLang)
+const pack = (li = state.lang) => (li ? packs[langCode(li)] : null);
 const uiPack = () => (state.ui ? uiPacks[langCode(state.ui)] : null);
-const langDir = () => pack()?.dir || 'rtl';
+const langDir = (li = state.lang) => pack(li)?.dir || 'rtl';
 const isLtr = () => (uiPack()?.dir || 'rtl') === 'ltr';
 // الرسالة المعروضة: الترجمة إن وُجدت، وإلا العربية حقلًا بحقل
-const current = () => {
-  const a = arCurrent(), tr = pack()?.messages?.[RELIGIONS[state.rel].set]?.[state.cur];
+const current = (li = state.lang) => {
+  const a = arCurrent(), tr = pack(li)?.messages?.[RELIGIONS[state.rel].set]?.[state.cur];
   if (!tr) return a;
   const out = { ...a };
   for (const k of ['title', 'short', 'medium', 'long']) if (tr[k]) out[k] = tr[k];
   return out;
 };
-const isTranslated = () => !!pack()?.messages?.[RELIGIONS[state.rel].set]?.[state.cur]?.[sizeField(state.len)];
+const isTranslated = (li = state.lang) => !!pack(li)?.messages?.[RELIGIONS[state.rel].set]?.[state.cur]?.[sizeField(state.len)];
 // اتجاه النص ولغته على عنصر يعرض الرسالة
-function setTextLang(node) {
-  const tr = isTranslated();
-  node.dir = tr ? langDir() : 'rtl';
-  node.lang = tr ? langCode() : 'ar';
+function setTextLang(node, li = state.lang) {
+  const tr = isTranslated(li);
+  node.dir = tr ? langDir(li) : 'rtl';
+  node.lang = tr ? langCode(li) : 'ar';
 }
 
 // المفضلة: [{ rel, title, msg, size, at }] الأحدث أولًا، من حساب المشترك أو من متصفح الزائر.
 // تُعرَّف الرسالة بدينها وعنوانها (لا برقمها) حتى تبقى صحيحة إن تغيّر ترتيب الرسائل.
 let favs = [];
 const favIndex = () => favs.findIndex(f => f.rel === RELIGIONS[state.rel].key && f.title === arCurrent().title);
-const msgUrl = () => `${SITE_URL}#r=${state.rel}&m=${state.cur + 1}&l=${state.len}${state.lang ? '&lang=' + langCode() : ''}`;
-const cardText = () => {
-  const m = current(); const { text } = segmentsFromHtml(m[sizeField(state.len)]);
+const msgUrl = (li = state.lang) => `${SITE_URL}#r=${state.rel}&m=${state.cur + 1}&l=${state.len}${li ? '&lang=' + langCode(li) : ''}`;
+const cardText = (li = state.lang) => {
+  const m = current(li); const { text } = segmentsFromHtml(m[sizeField(state.len)]);
   return { title: m.title, text };
 };
 const sizeField = k => ({ S: 'short', M: 'medium', L: 'long' })[k];
@@ -198,7 +200,7 @@ function renderCardView(animate = false) {
 /* ---------- الإحصاءات (track.js) ---------- */
 const msgRef = () => ({ rel: RELIGIONS[state.rel].key, msg: state.cur + 1, title: arCurrent().title });
 // أحداث الإحصاءات تحمل لغة الرسالة أيضًا (عمود lang في جدول events)
-const evRef = () => ({ ...msgRef(), lang: LANGS[state.lang][1] });
+const evRef = (li = state.lang) => ({ ...msgRef(), lang: LANGS[li][1] });
 let lastView = '';
 // تُحسب قراءة الرسالة مرة عند ظهورها، لا عند تغيير حجمها
 function trackView() {
@@ -254,7 +256,6 @@ async function setLang(i) {
   if (!state.intro) history.replaceState(null, '', msgUrl().slice(SITE_URL.length));
   lastView = '';
   renderLists(); renderBindings(); renderCardView();
-  if (!$('#share').hidden) openShare();   // نافذة المشاركة مفتوحة: نصها وروابطها وصورتها باللغة الجديدة
 }
 // تطبيق لغة الواجهة على الصفحة كلها: القاموس، الاتجاه، العنوان، ثم إعادة رسم ما يكتبه app.js
 function applyUi() {
@@ -415,28 +416,47 @@ $$('.edge').forEach(e => {
 
 /* ---------- المشاركة والنسخ والتحميل ---------- */
 let cardPromise = null;
-function generateCard() {
-  const m = current(); const { segs } = segmentsFromHtml(m[sizeField(state.len)]);
-  cardPromise = renderCard({ title: m.title, segs, url: msgUrl(), logoSrc: 'images/logo.png', dir: isTranslated() ? langDir() : 'rtl' });
+// كلها تأخذ لغة الرسالة: أزرار البطاقة بلغة البطاقة، وأزرار نافذة المشاركة بلغتها هي
+function generateCard(li = state.lang) {
+  const m = current(li); const { segs } = segmentsFromHtml(m[sizeField(state.len)]);
+  cardPromise = renderCard({ title: m.title, segs, url: msgUrl(li), logoSrc: 'images/logo.png', dir: isTranslated(li) ? langDir(li) : 'rtl' });
   return cardPromise;
 }
-async function copyText(btn) {
-  const { title, text } = cardText();
+async function copyText(btn, li = state.lang) {
+  const { title, text } = cardText(li);
   try { await navigator.clipboard.writeText(title + '\n\n' + text); } catch {}
   btn.classList.add('is-ok'); setTimeout(() => btn.classList.remove('is-ok'), 1600);
-  track('copy', evRef());
+  track('copy', evRef(li));
 }
-async function downloadCard() {
-  track('download', evRef());
-  const { dataUrl } = await generateCard();
-  const a = document.createElement('a'); a.href = dataUrl; a.download = (current().title || 'رسالة') + '.png'; a.click();
+async function downloadCard(li = state.lang) {
+  track('download', evRef(li));
+  const { dataUrl } = await generateCard(li);
+  const a = document.createElement('a'); a.href = dataUrl; a.download = (current(li).title || t('رسالة')) + '.png'; a.click();
 }
+// تُفتح بلغة البطاقة؛ تغيير لغتها من زرها لا يمسّ البطاقة
 function openShare() {
-  const { title, text } = cardText();
+  state.shareLang = state.lang;
+  renderShare();
+  $('#share').hidden = false;
+}
+async function setShareLang(i) {
+  closePops();
+  try { await loadLang(i); } catch { return; }
+  state.shareLang = i;
+  renderShare();
+}
+function renderShare() {
+  const li = state.shareLang;
+  const { title, text } = cardText(li);
   // المعاينة بتنسيق البطاقة نفسه (الآيات بخط Amiri وعلامة الآية حول رقمها)؛ المُرسَل يبقى نصًا
-  $('#share-text').innerHTML = current()[sizeField(state.len)];
-  setTextLang($('#share-text'));
-  const payload = encodeURIComponent(title + '\n\n' + text), page = encodeURIComponent(msgUrl());
+  $('#share-title').textContent = title; setTextLang($('#share-title'), li);
+  $('#share-text').innerHTML = current(li)[sizeField(state.len)];
+  setTextLang($('#share-text'), li);
+  bind('share-lang-code', n => n.textContent = LANGS[li][1]);
+  $$('[data-list="share-lang"]').forEach(box => {
+    box.innerHTML = `<div class="pop__title">${t('لغة الرسالة')}</div>` + LANGS.map((l, i) => `<button class="pop__item" role="option" data-pick-share-lang="${i}" aria-selected="${i === li}" lang="${l[1].toLowerCase()}" style="font-size:14px;padding:8px 12px"><span style="white-space:nowrap">${l[0]}</span><span class="code">${l[1]}</span></button>`).join('');
+  });
+  const payload = encodeURIComponent(title + '\n\n' + text), page = encodeURIComponent(msgUrl(li));
   const links = {
     wa: 'https://wa.me/?text=' + payload,
     tw: 'https://twitter.com/intent/tweet?text=' + payload,
@@ -444,12 +464,12 @@ function openShare() {
     fb: 'https://www.facebook.com/sharer/sharer.php?u=' + page + '&quote=' + payload,
   };
   $$('[data-share]').forEach(a => a.href = links[a.dataset.share]);
-  $('#share').hidden = false; generateCard();
+  generateCard(li);
 }
 async function shareNative(e) {
   if (!(navigator.share && navigator.canShare)) return;
   e.preventDefault(); const href = e.currentTarget.href;
-  const { file } = await (cardPromise || generateCard());
+  const { file } = await (cardPromise || generateCard(state.shareLang));
   if (file && navigator.canShare({ files: [file] })) navigator.share({ files: [file] }).catch(() => {});
   else window.open(href, '_blank', 'noopener');
 }
@@ -724,8 +744,8 @@ const actions = {
   menu: openMenu, 'close-menu': closeMenu, 'intro-menu': openIntroMenu, 'close-intro-menu': closeIntroMenu,
   'toggle-pop': (btn) => togglePop(btn), 'toggle-sub': (btn) => toggleSub(btn),
   share: openShare, 'close-share': () => $('#share').hidden = true,
-  copy: (btn) => copyText(btn), 'share-copy': (btn) => copyText(btn),
-  download: downloadCard, 'share-download': downloadCard,
+  copy: (btn) => copyText(btn), 'share-copy': (btn) => copyText(btn, state.shareLang),
+  download: () => downloadCard(), 'share-download': () => downloadCard(state.shareLang),
   feedback: openFeedback, 'close-feedback': () => $('#feedback').hidden = true,
   fav: toggleFav, favs: openFavs, 'close-favs': () => $('#favs').hidden = true,
   'fav-open': (btn) => openFav(+btn.dataset.i),
@@ -753,7 +773,8 @@ document.addEventListener('click', e => {
   const pickSize = t.closest('[data-pick-size]'); if (pickSize) { setLen(pickSize.dataset.pickSize, pickSize.dataset.scope); return; }
   const go = t.closest('[data-go]'); if (go) { goTo(+go.dataset.go); return; }
   const tab = t.closest('[data-auth-tab]'); if (tab) { setAuthMode(tab.dataset.authTab); return; }
-  const soc = t.closest('[data-share]'); if (soc) { track('share', { ...evRef(), channel: soc.dataset.share }); shareNative(e); return; }
+  const pickShare = t.closest('[data-pick-share-lang]'); if (pickShare) { setShareLang(+pickShare.dataset.pickShareLang); return; }
+  const soc = t.closest('[data-share]'); if (soc) { track('share', { ...evRef(state.shareLang), channel: soc.dataset.share }); shareNative(e); return; }
 
   const act = t.closest('[data-action]');
   if (act) {
