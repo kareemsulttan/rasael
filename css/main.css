@@ -576,7 +576,17 @@ textarea.field { resize: vertical; padding: 12px 14px; font-size: 15px; line-hei
 }
 .share__head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #efe8da; font-size: 17px; font-weight: 700; color: var(--ink); }
 .share__x { border: none; background: transparent; color: #a89a7c; font-size: 22px; line-height: 1; padding: 4px; }
-.share__body { padding: 18px 20px; overflow-y: auto; flex: 1; min-height: 0; }
+.share__body {
+  padding: 18px 20px; overflow-y: auto; flex: 1; min-height: 0;
+  /* شريط رفيع بلون البطاقة بدل شريط المتصفح، ومكانه محجوز فلا يتحرك النص حين يطول (كالفرنسية) */
+  scrollbar-width: thin; scrollbar-color: #d8cfbc transparent; scrollbar-gutter: stable;
+}
+.share__body::-webkit-scrollbar { width: 6px; }
+.share__body::-webkit-scrollbar-track { background: transparent; }
+.share__body::-webkit-scrollbar-thumb { background: #d8cfbc; border-radius: 3px; }
+.share__body::-webkit-scrollbar-button { display: none; height: 0; }
+[data-theme="dark"] .share__body { scrollbar-color: rgba(185, 157, 89, .4) transparent; }
+[data-theme="dark"] .share__body::-webkit-scrollbar-thumb { background: rgba(185, 157, 89, .4); }
 .share__title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--ink); text-align: center; margin: 0 0 6px; }
 .share__rule { width: 40px; height: 3px; background: var(--gold); border-radius: 2px; margin: 0 auto 14px; }
 .share__text { margin: 0; font-size: 15px; line-height: 2; color: var(--text); }
