@@ -452,6 +452,8 @@ function renderShare() {
   $('#share-title').textContent = title; setTextLang($('#share-title'), li);
   $('#share-text').innerHTML = current(li)[sizeField(state.len)];
   setTextLang($('#share-text'), li);
+  // جهة شريط التمرير تتبع لغة الرسالة: يمين للفرنسية (تُقرأ من اليسار)، ويسار للعربية
+  $('.share__body').dir = isTranslated(li) ? langDir(li) : 'rtl';
   $('.share__body').scrollTop = 0;   // نص جديد (لغة أخرى أو رسالة أخرى): يبدأ من أوله
   bind('share-lang-code', n => n.textContent = LANGS[li][1]);
   $$('[data-list="share-lang"]').forEach(box => {
